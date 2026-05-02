@@ -139,7 +139,42 @@ export function CatalogTable() {
           </button>
         </div>
 
-        <div className="mt-6 overflow-x-auto rounded-3xl border border-white/10">
+
+        <div className="mt-6 grid gap-3 md:hidden">
+          {filteredItems.length > 0 ? (
+            filteredItems.map((item) => (
+              <article key={item.barcode} className="rounded-2xl border border-white/10 bg-[#090909] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">{item.name}</h3>
+                    <p className="mt-1 text-xs text-zinc-500">{item.article} · {item.size} · {item.color}</p>
+                  </div>
+                  <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-1 text-[11px] text-zinc-300">{item.store}</span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-zinc-400">
+                    Штрихкод<br /><span className="text-zinc-200">{item.barcode}</span>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-zinc-400">
+                    Остаток<br /><span className="text-zinc-200">{item.stock} шт</span>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-zinc-400">
+                    Закупка<br /><span className="text-zinc-200">{item.purchasePrice}</span>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-zinc-400">
+                    Розница<br /><span className="text-zinc-200">{item.retailPrice}</span>
+                  </div>
+                </div>
+              </article>
+            ))
+          ) : (
+            <div className="rounded-2xl border border-white/10 bg-[#090909] px-4 py-8 text-center text-sm text-zinc-500">
+              Ничего не найдено по этому запросу
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 hidden overflow-x-auto rounded-3xl border border-white/10 md:block">
           <table className="min-w-full border-collapse text-left">
             <thead className="bg-white/[0.04] text-sm text-zinc-400">
               <tr>
