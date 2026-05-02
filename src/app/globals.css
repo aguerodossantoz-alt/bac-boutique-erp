@@ -37,3 +37,8 @@ select,
 textarea {
   font: inherit;
 }
+
+:root {
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}

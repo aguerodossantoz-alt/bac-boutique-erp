@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { AppSidebar } from "./app-sidebar";
+import { MobileHeader } from "./mobile-header";
+import { MobileBottomNav } from "./mobile-bottom-nav";
 
 type AppFrameUser = {
   role: "owner" | "admin" | "cashier";
@@ -19,7 +21,9 @@ export function AppFrame({ children, user }: AppFrameProps) {
   return (
     <main className="min-h-screen bg-[#050505] text-white">
       <AppSidebar key={sidebarKey} user={user} />
-      <section className="lg:pl-72">{children}</section>
+      <MobileHeader user={user} />
+      <section className="pb-24 lg:pb-0 lg:pl-72">{children}</section>
+      <MobileBottomNav user={user} />
     </main>
   );
 }

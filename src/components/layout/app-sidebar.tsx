@@ -49,7 +49,7 @@ export function AppSidebar({ user }: { user: SidebarUser }) {
 
   return (
     <aside className="fixed inset-y-0 left-0 hidden w-72 flex-col border-r border-white/10 bg-[#070707] lg:flex">
-      <div className="border-b border-white/10 px-6 py-6">
+      <div className="border-b border-white/10 px-6 pb-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.35em] text-zinc-300">
           BAC BOUTIQUE ERP
         </div>
@@ -120,7 +120,7 @@ export function AppSidebar({ user }: { user: SidebarUser }) {
         </div>
       </div>
 
-      <div className="border-t border-white/10 px-6 py-5">
+      <div className="border-t border-white/10 px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5">
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
           <div className="text-xs uppercase tracking-[0.25em] text-zinc-500">
             Пользователь
