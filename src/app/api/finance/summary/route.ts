@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
     const revenue = sales.reduce((sum, sale) => sum + sale.total, 0);
 
     let estimatedCost = 0;
+    let totalProfit = 0;
     let saleLinesWithPurchasePrice = 0;
     let totalSaleLines = 0;
 
@@ -86,11 +87,23 @@ export async function GET(request: NextRequest) {
 
         current.revenue += item.lineTotal;
 
-        if (item.product?.purchasePrice !== null && item.product?.purchasePrice !== undefined) {
-          const lineCost = item.product.purchasePrice * item.qty;
+        const purchasePrice = item.product?.purchasePrice;
+        const retailPrice = item.product?.retailPrice;
+
+        if (purchasePrice !== null && purchasePrice !== undefined) {
+          const lineCost = purchasePrice * item.qty;
           estimatedCost += lineCost;
           current.estimatedCost += lineCost;
           saleLinesWithPurchasePrice += 1;
+        }
+
+        if (
+          purchasePrice !== null &&
+          purchasePrice !== undefined &&
+          retailPrice !== null &&
+          retailPrice !== undefined
+        ) {
+          totalProfit += (retailPrice - purchasePrice) * item.qty;
         }
 
         storeMap.set(store, current);
@@ -132,6 +145,7 @@ export async function GET(request: NextRequest) {
       estimatedCost,
       expenses: expensesTotal,
       grossProfit,
+      totalProfit,
       netProfit,
       salesCount: sales.length,
       expensesCount: expenses.length,

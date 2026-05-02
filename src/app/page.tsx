@@ -68,6 +68,14 @@ export default async function HomePage() {
               <div className="text-sm text-zinc-500">Отчеты</div>
               <div className="mt-2 text-base font-semibold lg:text-xl">Открыть</div>
             </a>
+
+            <a
+              href="/finance"
+              className="rounded-2xl border border-white/10 bg-[#090909] p-4 text-white transition hover:bg-white/[0.04] lg:p-5"
+            >
+              <div className="text-sm text-zinc-500">Финансы</div>
+              <div className="mt-2 text-base font-semibold lg:text-xl">Открыть</div>
+            </a>
           </div>
         </div>
       </div>
