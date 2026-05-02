@@ -22,7 +22,7 @@ export function AppFrame({ children, user }: AppFrameProps) {
     <main className="min-h-screen bg-[#050505] text-white">
       <AppSidebar key={sidebarKey} user={user} />
       <MobileHeader user={user} />
-      <section className="pb-24 lg:pb-0 lg:pl-72">{children}</section>
+      <section className="pb-28 lg:pb-0 lg:pl-72">{children}</section>
       <MobileBottomNav user={user} />
     </main>
   );
