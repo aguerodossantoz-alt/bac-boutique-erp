@@ -42,3 +42,10 @@ textarea {
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
 }
+
+
+@media (max-width: 1023px) {
+  nextjs-portal {
+    display: none !important;
+  }
+}
