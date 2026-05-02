@@ -30,6 +30,7 @@ export function AppSidebar({ user }: { user: SidebarUser }) {
           { label: "Продажи", href: "/sales" },
           { label: "Инвентаризация", href: "/inventory" },
           { label: "Расходы", href: "/expenses" },
+          { label: "Финансы", href: "/finance" },
           { label: "Отчеты", href: "/reports" },
         ];
 

@@ -24,6 +24,7 @@ type FinanceSummary = {
   estimatedCost: number;
   expenses: number;
   grossProfit: number;
+  totalProfit: number;
   netProfit: number;
   salesCount: number;
   expensesCount: number;
@@ -157,11 +158,15 @@ export function LiveFinanceDashboard() {
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-[#090909] p-5">
-            <div className="text-sm text-zinc-500">Чистая прибыль</div>
+            <div className="text-sm text-zinc-500">Прибыль (розница - закупка)</div>
             <div className="mt-2 text-2xl font-semibold text-white">
-              {formatMoney(summary?.netProfit || 0)}
+              {formatMoney(summary?.totalProfit || 0)}
             </div>
           </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-white/10 bg-[#090909] p-4 text-sm text-zinc-300">
+          Количество продаж за месяц: <span className="font-semibold text-white">{summary?.salesCount || 0}</span>
         </div>
 
         <div className="mt-5 rounded-2xl border border-white/10 bg-[#090909] p-4 text-sm text-zinc-300">
