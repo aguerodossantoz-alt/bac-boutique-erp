@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       orderBy: { date: "desc" },
     });
 
-    const revenue = sales.reduce((sum, sale) => sum + sale.total, 0);
+    const revenue = sales.reduce((sum: number, sale: any) => sum + sale.total, 0);
 
     let estimatedCost = 0;
     let totalProfit = 0;
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
     const grossProfit = revenue - estimatedCost;
     const netProfit = grossProfit - expensesTotal;
 
-    const byStore = Array.from(storeMap.values()).map((item) => ({
+    const byStore = Array.from(storeMap.values()).map((item: any) => ({
       store: item.store,
       revenue: item.revenue,
       estimatedCost: item.estimatedCost,
@@ -152,11 +152,11 @@ export async function GET(request: NextRequest) {
       saleLinesWithPurchasePrice,
       totalSaleLines,
       byStore,
-      recentSales: sales.slice(0, 10).map((sale) => ({
+      recentSales: sales.slice(0, 10).map((sale: any) => ({
         id: sale.id,
         total: sale.total,
         createdAt: sale.createdAt.toISOString(),
-        itemsCount: sale.saleItems.reduce((sum, item) => sum + item.qty, 0),
+        itemsCount: sale.saleItems.reduce((sum: number, item: any) => sum + item.qty, 0),
       })),
     });
   } catch (error) {

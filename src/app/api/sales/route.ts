@@ -130,8 +130,8 @@ export async function GET(request: NextRequest) {
         id: sale.id,
         total: sale.total,
         createdAt: sale.createdAt.toISOString(),
-        itemsCount: sale.saleItems.reduce((sum, item) => sum + item.qty, 0),
-        lines: sale.saleItems.map((item) => ({
+        itemsCount: sale.saleItems.reduce((sum: number, item: any) => sum + item.qty, 0),
+        lines: sale.saleItems.map((item: any) => ({
           id: item.id,
           productId: item.productId,
           barcode: toText(item.product?.barcode),
@@ -187,7 +187,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const sale = await prisma.$transaction(async (tx) => {
+    const sale = await prisma.$transaction(async (tx: any) => {
       const resolvedItems: Array<{
         productId: number;
         barcode: string;
@@ -208,7 +208,7 @@ export async function POST(request: Request) {
 
         const rawStore = String(rawItem.store ?? "").trim();
 
-        let product = null;
+        let product: any = null;
 
         if (rawItem.productId && Number.isInteger(rawItem.productId)) {
           product = await tx.product.findUnique({
@@ -287,13 +287,13 @@ export async function POST(request: Request) {
         });
       }
 
-      const total = resolvedItems.reduce((sum, item) => sum + item.lineTotal, 0);
+      const total = resolvedItems.reduce((sum: number, item: any) => sum + item.lineTotal, 0);
 
       const createdSale = await tx.sale.create({
         data: {
           total,
           saleItems: {
-            create: resolvedItems.map((item) => ({
+            create: resolvedItems.map((item: any) => ({
               productId: item.productId,
               qty: item.qty,
               unitPrice: item.unitPrice,
@@ -333,7 +333,7 @@ export async function POST(request: Request) {
         id: sale.id,
         total: sale.total,
         createdAt: sale.createdAt.toISOString(),
-        itemsCount: sale.saleItems.reduce((sum, item) => sum + item.qty, 0),
+        itemsCount: sale.saleItems.reduce((sum: number, item: any) => sum + item.qty, 0),
       },
     });
   } catch (error) {

@@ -28,11 +28,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         username: { label: "Логин", type: "text" },
         password: { label: "Пароль", type: "password" },
+        remember: { label: "Запомнить меня", type: "checkbox" },
       },
       async authorize(credentials) {
         const username = String(credentials?.username ?? "").trim();
         const password = String(credentials?.password ?? "").trim();
-        const remember = String(credentials?.remember ?? "") === "true" || String(credentials?.remember ?? "") === "1";
+        const rememberRaw = String(credentials?.remember ?? "").toLowerCase();
+        const remember =
+          rememberRaw === "true" || rememberRaw === "1" || rememberRaw === "on";
 
         if (!username || !password) {
           return null;
