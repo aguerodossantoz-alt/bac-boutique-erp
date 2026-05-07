@@ -65,7 +65,7 @@ export async function DELETE(
       );
     }
 
-    const cancelledSale = await prisma.$transaction(async (tx) => {
+    const cancelledSale = await prisma.$transaction(async (tx: any) => {
       const sale = await tx.sale.findUnique({
         where: { id: saleId },
         include: {
@@ -115,7 +115,7 @@ export async function DELETE(
       return {
         id: sale.id,
         total: sale.total,
-        itemsCount: sale.saleItems.reduce((sum, item) => sum + item.qty, 0),
+        itemsCount: sale.saleItems.reduce((sum: number, item: any) => sum + item.qty, 0),
       };
     });
 

@@ -112,9 +112,12 @@ export async function GET(request: NextRequest) {
       orderBy: [{ date: "desc" }, { id: "desc" }],
     });
 
-    const totalAmount = expenses.reduce((sum, item) => sum + item.amount, 0);
+    const totalAmount = expenses.reduce(
+      (sum: number, item: any) => sum + Number(item.amount),
+      0
+    );
     const storesCount = new Set(
-      expenses.map((item) => item.store).filter(Boolean)
+      expenses.map((item: any) => item.store).filter(Boolean)
     ).size;
 
     return NextResponse.json({
@@ -125,7 +128,7 @@ export async function GET(request: NextRequest) {
         storesCount,
         month: monthKey,
       },
-      rows: expenses.map((item) => ({
+      rows: expenses.map((item: any) => ({
         id: item.id,
         title: item.title,
         amount: item.amount,

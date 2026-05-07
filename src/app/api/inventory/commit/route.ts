@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
     let updatedCount = 0;
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       for (const item of items) {
         const productId = Number(item.productId);
         const factQty = toNonNegativeInt(item.factQty);

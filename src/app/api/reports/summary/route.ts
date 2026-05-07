@@ -77,9 +77,9 @@ export async function GET(request: NextRequest) {
         ? allLines
         : allLines.filter((line) => line.store === selectedStore);
 
-    const revenue = filteredLines.reduce((sum, line) => sum + line.lineTotal, 0);
+    const revenue = filteredLines.reduce((sum: number, line: any) => sum + line.lineTotal, 0);
 
-    const itemsSold = filteredLines.reduce((sum, line) => sum + line.qty, 0);
+    const itemsSold = filteredLines.reduce((sum: number, line: any) => sum + line.qty, 0);
 
     const salesCount =
       selectedStore === "Все магазины"
