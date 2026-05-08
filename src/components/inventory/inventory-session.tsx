@@ -119,13 +119,6 @@ useEffect(() => {
 
   const selectedProduct = matchedProducts[0] ?? null;
 
-  useEffect(() => {
-    if (!selectedProduct) return;
-
-    const currentQty = parseNullableInt(selectedProduct.stock_qty);
-    setFactQty(currentQty === null ? "0" : String(currentQty));
-  }, [selectedProduct?.id]);
-
   const summary = useMemo(() => {
     let totalFact = 0;
     let shortages = 0;
@@ -165,7 +158,54 @@ useEffect(() => {
       return;
     }
 
-    setMessage(`Найден товар: ${selectedProduct.name}`);
+    addProductToSession(selectedProduct);
+  }
+
+  function addProductToSession(product: ProductRow) {
+    const parsedFactQty = parseNullableInt(factQty);
+
+    if (parsedFactQty !== null && parsedFactQty < 0) {
+      setMessage("Введите корректный факт.");
+      return;
+    }
+
+    const qtyToAdd = parsedFactQty === null || parsedFactQty === 0 ? 1 : parsedFactQty;
+    const beforeQty = parseNullableInt(product.stock_qty);
+    let savedFactQty = qtyToAdd;
+
+    setSessionLines((prev) => {
+      const existingLine = prev.find(
+        (line) => line.productId === product.id || line.barcode === product.barcode
+      );
+
+      const nextFactQty = existingLine ? existingLine.factQty + qtyToAdd : qtyToAdd;
+      savedFactQty = nextFactQty;
+      const difference = beforeQty === null ? null : nextFactQty - beforeQty;
+
+      const nextLine: InventoryLine = {
+        productId: product.id,
+        barcode: product.barcode,
+        name: product.name,
+        article: product.article,
+        store: product.store,
+        beforeQty,
+        factQty: nextFactQty,
+        difference,
+      };
+
+      const next = existingLine
+        ? prev.map((line) =>
+            line.productId === nextLine.productId ? nextLine : line
+          )
+        : [nextLine, ...prev];
+
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      return next;
+    });
+
+    setMessage(`Сохранено в сессии: ${product.name}. Факт: ${savedFactQty}`);
+    setQuery("");
+    setFactQty("0");
   }
 
   function saveLine() {
@@ -176,41 +216,7 @@ useEffect(() => {
       return;
     }
 
-    const parsedFactQty = parseNullableInt(factQty);
-
-    if (parsedFactQty === null || parsedFactQty < 0) {
-      setMessage("Введите корректный факт.");
-      return;
-    }
-
-    const beforeQty = parseNullableInt(selectedProduct.stock_qty);
-    const difference =
-      beforeQty === null ? null : parsedFactQty - beforeQty;
-
-    const nextLine: InventoryLine = {
-      productId: selectedProduct.id,
-      barcode: selectedProduct.barcode,
-      name: selectedProduct.name,
-      article: selectedProduct.article,
-      store: selectedProduct.store,
-      beforeQty,
-      factQty: parsedFactQty,
-      difference,
-    };
-
-    setSessionLines((prev) => {
-      const next = prev.some((line) => line.productId === nextLine.productId)
-        ? prev.map((line) =>
-            line.productId === nextLine.productId ? nextLine : line
-          )
-        : [nextLine, ...prev];
-
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      return next;
-    });
-
-    setMessage(`Сохранено в сессию: ${selectedProduct.name}`);
-    setQuery("");
+    addProductToSession(selectedProduct);
   }
 
   function removeLine(productId: number) {
