@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyboardEvent, useEffect, useMemo, useState } from "react";
+import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type ProductRow = {
   id: number;
@@ -51,6 +51,7 @@ export function InventorySession() {
   const [message, setMessage] = useState("");
   const [currentStore, setCurrentStore] = useState("Магазин 1");
   const [isFinishing, setIsFinishing] = useState(false);
+  const barcodeInputRef = useRef<HTMLInputElement | null>(null);
   const storageKey = `${INVENTORY_SESSION_KEY}-${currentStore}`;
 
 async function loadProducts() {
@@ -83,6 +84,10 @@ useEffect(() => {
   setMessage("");
   loadProducts();
 }, [currentStore]);
+
+useEffect(() => {
+  barcodeInputRef.current?.focus();
+}, []);
 
 useEffect(() => {
   try {
@@ -206,6 +211,9 @@ useEffect(() => {
     setMessage(`Сохранено в сессии: ${product.name}. Факт: ${savedFactQty}`);
     setQuery("");
     setFactQty("0");
+    requestAnimationFrame(() => {
+      barcodeInputRef.current?.focus();
+    });
   }
 
   function saveLine() {
@@ -366,6 +374,7 @@ useEffect(() => {
 
         <div className="mt-5 grid gap-4 md:grid-cols-[1fr_180px_160px]">
           <input
+            ref={barcodeInputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onSearchEnter}
