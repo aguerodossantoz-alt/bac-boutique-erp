@@ -195,9 +195,16 @@ async function deleteDraftFromProduct() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState<CatalogItem | null>(null);
   const [saveMessage, setSaveMessage] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState<"success" | "error" | null>(null);
   const STORE_OPTIONS = ["Все магазины", "Магазин 1", "Магазин 2"];
 const STATUS_OPTIONS = ["READY_FOR_SALE", "DRAFT", "MANUAL_REVIEW"];
-async function loadCatalogFromDbFirst() {
+async function loadCatalogFromDbFirst(showStatus = false) {
+  if (showStatus) {
+    setIsRefreshing(true);
+    setRefreshMessage(null);
+  }
+
   try {
     const response = await fetch("/api/products", {
       cache: "no-store",
@@ -210,11 +217,23 @@ async function loadCatalogFromDbFirst() {
     }
 
     setItems(Array.isArray(result.rows) ? result.rows : []);
+
+    if (showStatus) {
+      setRefreshMessage("success");
+    }
   } catch (error) {
     console.error("Ошибка загрузки Product API:", error);
     setItems([]);
+
+    if (showStatus) {
+      setRefreshMessage("error");
+    }
   } finally {
     setLoaded(true);
+
+    if (showStatus) {
+      setIsRefreshing(false);
+    }
   }
 }
 useEffect(() => {
@@ -354,13 +373,22 @@ const stores = STORE_OPTIONS;
 
             <button
               type="button"
-              onClick={loadCatalogFromDbFirst}
-              className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm text-white transition hover:bg-white/[0.08]"
+              onClick={() => loadCatalogFromDbFirst(true)}
+              className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm text-white transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isRefreshing}
             >
-Обновить каталог
+{isRefreshing ? "Обновляю..." : "Обновить каталог"}
             </button>
           </div>
         </div>
+
+        {refreshMessage === "success" && (
+          <p className="mt-3 text-sm text-emerald-300">Каталог обновлён</p>
+        )}
+
+        {refreshMessage === "error" && (
+          <p className="mt-3 text-sm text-red-300">Не удалось обновить каталог</p>
+        )}
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-white/10 bg-[#090909] p-5">
@@ -414,12 +442,23 @@ const stores = STORE_OPTIONS;
           </div>
 
           <div className="flex flex-col gap-3 md:flex-row">
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Поиск: название, артикул, штрихкод"
-              className="w-full rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 md:w-[320px]"
-            />
+            <div className="flex w-full flex-col gap-2 md:w-[320px]">
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Поиск: название, артикул, штрихкод"
+                className="w-full rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500"
+              />
+              {query.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="self-start text-xs text-zinc-400 transition hover:text-white"
+                >
+                  Очистить поиск
+                </button>
+              )}
+            </div>
 
             <select
               value={storeFilter}
