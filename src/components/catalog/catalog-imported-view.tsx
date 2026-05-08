@@ -66,10 +66,9 @@ try {
       const createdRow = createResult?.row;
 
       setSaveMessage("Новый товар создан в Product.");
-      await loadCatalogFromDbFirst();
 
       if (createdRow) {
-        setDraft({
+        const normalizedRow: CatalogItem = {
           id: createdRow.id,
           isNew: false,
           barcode: String(createdRow.barcode ?? ""),
@@ -82,8 +81,13 @@ try {
           store: String(createdRow.store ?? ""),
           item_status: String(createdRow.item_status ?? "READY_FOR_SALE"),
           image_url: String(createdRow.image_url ?? ""),
-        });
+        };
+
+        setItems((prev) => [normalizedRow, ...prev]);
+        setDraft(normalizedRow);
+        setSelectedIndex(0);
       } else {
+        await loadCatalogFromDbFirst();
         setDraft(null);
       }
 

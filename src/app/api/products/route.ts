@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     const purchasePriceRaw = String(body?.purchase_price ?? "").trim();
     const retailPriceRaw = String(body?.retail_price ?? "").trim();
     const stockQtyRaw = String(body?.stock_qty ?? "").trim();
-    const store = String(body?.store ?? "").trim();
+    const store = String(body?.store ?? "").trim() || "Магазин 1";
     const itemStatus =
       String(body?.item_status ?? "").trim() || "READY_FOR_SALE";
 
@@ -176,17 +176,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!store) {
-      return NextResponse.json(
-        { error: "Выбери магазин." },
-        { status: 400 }
-      );
-    }
-
     const promoPrice = toNumber(promoPriceRaw);
     const purchasePrice = toNumber(purchasePriceRaw);
     const retailPrice = toNumber(retailPriceRaw);
-    const stockQty = toInt(stockQtyRaw);
+    const stockQty = stockQtyRaw ? toInt(stockQtyRaw) : 0;
 
     const existingProduct = await prisma.product.findFirst({
       where: {
