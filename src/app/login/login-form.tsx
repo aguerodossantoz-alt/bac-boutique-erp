@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 const SAVED_LOGIN_KEY = "bac_erp_saved_login";
+const SESSION_MODE_KEY = "bac_erp_session_mode";
 
 export function LoginForm({
   hasError,
@@ -48,7 +49,21 @@ export function LoginForm({
   };
 
   return (
-    <form autoComplete="off" action={loginAction} className="mt-6 space-y-4">
+    <form
+      autoComplete="off"
+      action={loginAction}
+      className="mt-6 space-y-4"
+      onSubmit={() => {
+        const mode = remember ? "persistent" : "session";
+        if (remember) {
+          localStorage.setItem(SESSION_MODE_KEY, mode);
+          sessionStorage.removeItem(SESSION_MODE_KEY);
+        } else {
+          sessionStorage.setItem(SESSION_MODE_KEY, mode);
+          localStorage.removeItem(SESSION_MODE_KEY);
+        }
+      }}
+    >
       <div>
         <div className="mb-2 text-sm text-zinc-400">Логин</div>
         <input
