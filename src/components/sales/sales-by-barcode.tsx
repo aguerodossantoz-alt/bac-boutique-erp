@@ -476,7 +476,7 @@ const discountedCartTotal = useMemo(() => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full min-w-0 space-y-6 overflow-x-hidden">
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -567,7 +567,7 @@ const discountedCartTotal = useMemo(() => {
         )}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(360px,520px)]">
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
           <div className="text-xs uppercase tracking-[0.3em] text-zinc-500">
             Добавить в чек
@@ -576,7 +576,7 @@ const discountedCartTotal = useMemo(() => {
             Поиск по штрихкоду / названию / артикулу
           </h2>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-[1fr_120px_160px_200px]">
+          <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_120px_160px_200px]">
             <input
               ref={barcodeInputRef}
               value={query}
@@ -673,7 +673,7 @@ const discountedCartTotal = useMemo(() => {
           )}
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+        <div className="w-full max-w-full min-w-0 rounded-3xl border border-white/10 bg-white/[0.04] p-6 2xl:max-w-[520px]">
           <div className="text-xs uppercase tracking-[0.3em] text-zinc-500">
             Текущий чек
           </div>
@@ -705,7 +705,7 @@ const discountedCartTotal = useMemo(() => {
     </div>
   </div>
 </div>
-          <div className="mt-5 overflow-x-auto border border-white/10">
+          <div className="mt-5 max-w-full overflow-x-auto border border-white/10">
             <table className="min-w-full border-collapse text-left text-sm">
               <thead className="bg-white/[0.04] text-zinc-400">
                 <tr>
@@ -723,8 +723,8 @@ const discountedCartTotal = useMemo(() => {
                     key={item.productId}
                     className="border-t border-white/10 bg-[#090909]"
                   >
-                    <td className="px-4 py-4 text-white">{item.name}</td>
-                    <td className="px-4 py-4 text-zinc-300">
+                    <td className="min-w-0 max-w-[220px] break-words whitespace-normal px-4 py-4 text-white">{item.name}</td>
+                    <td className="min-w-0 break-words whitespace-normal px-4 py-4 text-zinc-300">
                       {item.barcode}
                     </td>
                     <td className="px-4 py-4">
@@ -733,7 +733,7 @@ const discountedCartTotal = useMemo(() => {
                         onChange={(event) =>
                           changeCartPrice(item.productId, event.target.value)
                         }
-                        className="w-24 rounded-xl border border-white/10 bg-[#050505] px-3 py-2 text-zinc-300 outline-none"
+                        className="w-20 min-w-0 rounded-xl border border-white/10 bg-[#050505] px-3 py-2 text-zinc-300 outline-none"
                       />
                     </td>
                     <td className="px-4 py-4">
