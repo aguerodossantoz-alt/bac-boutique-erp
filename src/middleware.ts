@@ -1,30 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-function hasSessionToken(req: NextRequest) {
-  const cookieNames = [
-    "authjs.session-token",
-    "__Secure-authjs.session-token",
-    "next-auth.session-token",
-    "__Secure-next-auth.session-token",
-  ];
-
-  return cookieNames.some((name) => {
-    const value = req.cookies.get(name)?.value;
-    return Boolean(value);
-  });
-}
-
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
-  const isLoggedIn = hasSessionToken(req);
   const isLoginPage = pathname.startsWith("/login");
+  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+  const isLoggedIn = Boolean(token);
 
   if (!isLoggedIn && !isLoginPage) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   if (isLoggedIn && isLoginPage) {
-    return NextResponse.redirect(new URL("/reports", req.url));
+    return NextResponse.redirect(new URL("/catalog", req.url));
   }
 
   return NextResponse.next();
