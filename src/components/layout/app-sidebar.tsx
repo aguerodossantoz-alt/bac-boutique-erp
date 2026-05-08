@@ -49,7 +49,7 @@ export function AppSidebar({ user }: { user: SidebarUser }) {
   const displayName = user.displayName?.trim() || user.username || "Пользователь";
 
   return (
-    <aside className="fixed inset-y-0 left-0 hidden w-72 flex-col border-r border-white/10 bg-[#070707] lg:flex">
+    <aside className="fixed inset-y-0 left-0 hidden w-[240px] xl:w-[250px] flex-col border-r border-white/10 bg-[#070707] lg:flex">
       <div className="border-b border-white/10 px-6 pb-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.35em] text-zinc-300">
           BAC BOUTIQUE ERP
