@@ -19,8 +19,6 @@ type CatalogItem = {
   image_url: string;
 };
 
-const STORAGE_KEY = "bac-boutique-catalog-import-v1";
-
 export function CatalogImportedView() {
   const router = useRouter();
 async function saveDraftToProduct() {
@@ -213,16 +211,8 @@ async function loadCatalogFromDbFirst() {
 
     setItems(Array.isArray(result.rows) ? result.rows : []);
   } catch (error) {
-    console.error("База не ответила, беру localStorage:", error);
-
-    try {
-      const raw = localStorage.getItem("bac-boutique-catalog-import-v1");
-      const fallbackRows = raw ? JSON.parse(raw) : [];
-      setItems(Array.isArray(fallbackRows) ? fallbackRows : []);
-    } catch (localError) {
-      console.error("Не удалось прочитать localStorage:", localError);
-      setItems([]);
-    }
+    console.error("Ошибка загрузки Product API:", error);
+    setItems([]);
   } finally {
     setLoaded(true);
   }
@@ -286,18 +276,6 @@ const stores = STORE_OPTIONS;
     });
   }
 
-  function saveItem() {
-    if (selectedIndex === null || !draft) return;
-
-    const nextItems = [...items];
-    nextItems[selectedIndex] = { ...draft };
-
-    setItems(nextItems);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextItems));
-    setSaveMessage(`Товар сохранен: ${draft.name}`);
-    closeItem();
-  }
-
   if (!loaded) {
     return (
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-zinc-300">
@@ -317,15 +295,14 @@ const stores = STORE_OPTIONS;
             Каталог пока пуст
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-400">
-            Сначала загрузите Excel-файл на странице импорта. После этого товары
-            появятся здесь.
+            Добавьте первый товар через кнопку «Новый товар». После сохранения он появится в каталоге и в базе данных.
           </p>
 
           <Link
             href="/catalog/import"
             className="mt-6 inline-flex rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm text-white transition hover:bg-white/[0.08]"
           >
-            Перейти к импорту Excel
+Добавить товар в каталог
           </Link>
         </div>
       </div>
@@ -339,7 +316,7 @@ const stores = STORE_OPTIONS;
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="text-xs uppercase tracking-[0.3em] text-zinc-500">
-              Живой каталог из базы
+              ЖИВОЙ КАТАЛОГ ИЗ БАЗЫ
             </div>
             <h1 className="mt-2 text-3xl font-semibold text-white">
               Товары бутика
@@ -347,6 +324,7 @@ const stores = STORE_OPTIONS;
             <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">
               Каталог загружается из базы данных Prisma Product.
             </p>
+            <p className="mt-2 text-sm text-emerald-300">Источник данных: Prisma Product / API</p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -379,7 +357,7 @@ const stores = STORE_OPTIONS;
               onClick={loadCatalogFromDbFirst}
               className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm text-white transition hover:bg-white/[0.08]"
             >
-              Обновить импорт
+Обновить каталог
             </button>
           </div>
         </div>

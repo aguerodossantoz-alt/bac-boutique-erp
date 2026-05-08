@@ -10,11 +10,17 @@ const absoluteDbPath = path.resolve(process.cwd(), "dev.db");
 const sqliteUrl = `file:${absoluteDbPath.replace(/\\/g, "/")}`;
 
 function createPrismaClient() {
-  const adapter = new PrismaBetterSqlite3({
-    url: sqliteUrl,
-  });
+  const databaseUrl = process.env.DATABASE_URL?.trim();
 
-  return new PrismaClient({ adapter });
+  if (!databaseUrl || databaseUrl.startsWith("file:")) {
+    const adapter = new PrismaBetterSqlite3({
+      url: databaseUrl || sqliteUrl,
+    });
+
+    return new PrismaClient({ adapter });
+  }
+
+  return new PrismaClient();
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
