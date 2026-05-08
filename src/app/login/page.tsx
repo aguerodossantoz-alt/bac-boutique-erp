@@ -1,6 +1,6 @@
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
-import { signIn } from "@/auth";
+import { auth, signIn } from "@/auth";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({
@@ -8,6 +8,11 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const session = await auth();
+  if (session?.user) {
+    redirect("/catalog");
+  }
+
   const params = await searchParams;
   const hasError =
     params.error === "CredentialsSignin" || params.error === "credentials";
