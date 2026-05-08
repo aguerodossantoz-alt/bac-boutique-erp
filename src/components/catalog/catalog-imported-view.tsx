@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type CatalogItem = {
@@ -21,6 +22,7 @@ type CatalogItem = {
 const STORAGE_KEY = "bac-boutique-catalog-import-v1";
 
 export function CatalogImportedView() {
+  const router = useRouter();
 async function saveDraftToProduct() {
   if (!draft) {
     setSaveMessage("Нет открытой карточки товара.");
@@ -67,6 +69,7 @@ try {
 
       setSaveMessage("Новый товар создан в Product.");
       await loadCatalogFromDbFirst();
+      router.refresh();
 
       if (createdRow) {
         setDraft({
@@ -136,6 +139,7 @@ try {
     }
 
     await loadCatalogFromDbFirst();
+    router.refresh();
     setSaveMessage("Товар сохранен в Product.");
   } catch (error) {
     console.error("Ошибка сохранения карточки:", error);
@@ -176,6 +180,7 @@ async function deleteDraftFromProduct() {
 
     setDraft(null);
     await loadCatalogFromDbFirst();
+    router.refresh();
     setSaveMessage("Товар удален.");
   } catch (error) {
     console.error("Ошибка удаления товара:", error);
@@ -334,14 +339,13 @@ const stores = STORE_OPTIONS;
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="text-xs uppercase tracking-[0.3em] text-zinc-500">
-              Живой каталог из Excel
+              Живой каталог из базы
             </div>
             <h1 className="mt-2 text-3xl font-semibold text-white">
               Товары бутика
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">
-              Сейчас каталог читается из импортированного Excel-файла, который
-              сохранен в браузере.
+              Каталог загружается из базы данных Prisma Product.
             </p>
           </div>
 
@@ -424,7 +428,7 @@ const stores = STORE_OPTIONS;
               Таблица каталога
             </div>
             <h2 className="mt-2 text-2xl font-semibold text-white">
-              Импортированные товары
+              Товары бутика
             </h2>
             <p className="mt-2 text-sm text-zinc-500">
               Нажми на строку товара, чтобы открыть карточку и отредактировать.
