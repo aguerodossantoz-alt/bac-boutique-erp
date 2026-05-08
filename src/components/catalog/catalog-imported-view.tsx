@@ -18,7 +18,21 @@ type CatalogItem = {
   image_url: string;
 };
 
-const STORAGE_KEY = "bac-boutique-catalog-import-v1";
+
+type ApiErrorPayload = {
+  error?: string;
+  row?: CatalogItem & { id?: number; isNew?: boolean };
+};
+
+function parseJsonSafely(text: string): ApiErrorPayload {
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text) as ApiErrorPayload;
+  } catch {
+    return { error: text };
+  }
+}
 
 export function CatalogImportedView() {
 async function saveDraftToProduct() {
@@ -51,13 +65,7 @@ const payload = {
       });
 
       const createText = await createResponse.text();
-let createResult: any = {};
-
-try {
-  createResult = createText ? JSON.parse(createText) : {};
-} catch {
-  createResult = { error: createText };
-}
+const createResult = parseJsonSafely(createText);
 
       if (!createResponse.ok) {
         throw new Error(createResult?.error || "Ошибка создания товара.");
@@ -104,13 +112,7 @@ try {
     });
 
     const updateText = await updateResponse.text();
-let updateResult: any = {};
-
-try {
-  updateResult = updateText ? JSON.parse(updateText) : {};
-} catch {
-  updateResult = { error: updateText };
-}
+const updateResult = parseJsonSafely(updateText);
 
     if (!updateResponse.ok) {
       throw new Error(updateResult?.error || "Ошибка сохранения товара.");
@@ -162,16 +164,10 @@ async function deleteDraftFromProduct() {
     });
 
     const rawText = await response.text();
-    let result: any = null;
-
-    try {
-      result = rawText ? JSON.parse(rawText) : null;
-    } catch {
-      result = null;
-    }
+    const result = parseJsonSafely(rawText);
 
     if (!response.ok) {
-      throw new Error(result?.error || "Не удалось удалить товар.");
+      throw new Error(result.error || "Не удалось удалить товар.");
     }
 
     setDraft(null);
@@ -189,8 +185,7 @@ async function deleteDraftFromProduct() {
   const [storeFilter, setStoreFilter] = useState("Все магазины");
   const [loaded, setLoaded] = useState(false);
 
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [draft, setDraft] = useState<CatalogItem | null>(null);
+    const [draft, setDraft] = useState<CatalogItem | null>(null);
   const [saveMessage, setSaveMessage] = useState("");
   const STORE_OPTIONS = ["Все магазины", "Магазин 1", "Магазин 2"];
 const STATUS_OPTIONS = ["READY_FOR_SALE", "DRAFT", "MANUAL_REVIEW"];
@@ -264,12 +259,10 @@ const stores = STORE_OPTIONS;
   }, [items]);
 
   function openItem(index: number) {
-    setSelectedIndex(index);
     setDraft({ ...items[index] });
   }
 
   function closeItem() {
-    setSelectedIndex(null);
     setDraft(null);
   }
 
@@ -281,17 +274,6 @@ const stores = STORE_OPTIONS;
     });
   }
 
-  function saveItem() {
-    if (selectedIndex === null || !draft) return;
-
-    const nextItems = [...items];
-    nextItems[selectedIndex] = { ...draft };
-
-    setItems(nextItems);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextItems));
-    setSaveMessage(`Товар сохранен: ${draft.name}`);
-    closeItem();
-  }
 
   if (!loaded) {
     return (
@@ -334,14 +316,15 @@ const stores = STORE_OPTIONS;
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="text-xs uppercase tracking-[0.3em] text-zinc-500">
-              Живой каталог из Excel
+              Живой каталог из Product
             </div>
             <h1 className="mt-2 text-3xl font-semibold text-white">
               Товары бутика
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">
-              Сейчас каталог читается из импортированного Excel-файла, который
-              сохранен в браузере.
+              Каталог загружается из Product (Prisma) через API. Локальный Excel-
+              импорт в браузере используется только как резерв, если база временно
+              недоступна.
             </p>
           </div>
 
@@ -349,7 +332,6 @@ const stores = STORE_OPTIONS;
             <button
               type="button"
               onClick={() => {
-                setSelectedIndex(null);
                 setDraft({
                   isNew: true,
                   barcode: "",
@@ -375,7 +357,7 @@ const stores = STORE_OPTIONS;
               onClick={loadCatalogFromDbFirst}
               className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm text-white transition hover:bg-white/[0.08]"
             >
-              Обновить импорт
+              Обновить каталог
             </button>
           </div>
         </div>
@@ -424,7 +406,7 @@ const stores = STORE_OPTIONS;
               Таблица каталога
             </div>
             <h2 className="mt-2 text-2xl font-semibold text-white">
-              Импортированные товары
+              Товары из Product
             </h2>
             <p className="mt-2 text-sm text-zinc-500">
               Нажми на строку товара, чтобы открыть карточку и отредактировать.
