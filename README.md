@@ -12,3 +12,10 @@ Set these variables for database connectivity:
 ```bash
 npm run build
 ```
+
+Set these variables for Web Push notifications:
+
+- `WEB_PUSH_EMAIL=you@example.com`
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY=...`
+- `VAPID_PRIVATE_KEY=...`
+

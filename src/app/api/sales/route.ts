@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { sendSalePushNotification } from "@/lib/web-push";
 
 type AppRole = "owner" | "admin" | "cashier";
 
@@ -123,6 +124,9 @@ export async function GET(request: NextRequest) {
         },
       },
     });
+
+
+
 
     return NextResponse.json({
       ok: true,
@@ -325,6 +329,34 @@ export async function POST(request: Request) {
       }
 
       return createdSale;
+    });
+
+
+    const purchaseTotal = sale.saleItems.reduce((sum: number, item: any) => {
+      const purchasePrice = Number(item.product?.purchasePrice ?? 0);
+      return sum + purchasePrice * item.qty;
+    }, 0);
+
+    const baseTotal = sale.saleItems.reduce((sum: number, item: any) => {
+      const basePrice = Number(item.product?.retailPrice ?? item.unitPrice ?? 0);
+      return sum + basePrice * item.qty;
+    }, 0);
+
+    const revenue = sale.total;
+    const profit = revenue - purchaseTotal;
+    const discount = Math.max(0, baseTotal - revenue);
+    const itemsCount = sale.saleItems.reduce((sum: number, item: any) => sum + item.qty, 0);
+    const firstProductName = toText(sale.saleItems[0]?.product?.name) || "Товар";
+    const store = toText(sale.saleItems[0]?.store) || "Все магазины";
+
+    await sendSalePushNotification({
+      saleId: sale.id,
+      store,
+      revenue,
+      profit,
+      discount,
+      itemsCount,
+      firstProductName,
     });
 
     return NextResponse.json({

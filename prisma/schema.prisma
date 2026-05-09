@@ -72,3 +72,15 @@ model Expense {
   comment   String?
   createdAt DateTime @default(now())
 }
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  role      String?
+  store     String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
