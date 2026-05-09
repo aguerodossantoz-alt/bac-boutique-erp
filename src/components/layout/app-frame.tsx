@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "./app-sidebar";
 import { MobileHeader } from "./mobile-header";
 import { MobileBottomNav } from "./mobile-bottom-nav";
-import { SalesNotifications } from "../sales/sales-notifications";
-import { PushNotificationToggle } from "../push/push-notification-toggle";
+import { SalesNotifications } from "@/components/sales/sales-notifications";
+import { PushNotificationToggle } from "@/components/push/push-notification-toggle";
 
 type AppFrameUser = {
   role: "owner" | "admin" | "cashier";
