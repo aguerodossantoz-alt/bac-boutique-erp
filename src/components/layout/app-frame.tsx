@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "./app-sidebar";
 import { MobileHeader } from "./mobile-header";
 import { MobileBottomNav } from "./mobile-bottom-nav";
+import { SalesNotifications } from "../sales/sales-notifications";
 
 type AppFrameUser = {
   role: "owner" | "admin" | "cashier";
@@ -22,8 +23,12 @@ export function AppFrame({ children, user }: AppFrameProps) {
     <main className="min-h-screen bg-[#050505] text-white">
       <AppSidebar key={sidebarKey} user={user} />
       <MobileHeader user={user} />
+
       <section className="pb-28 lg:pb-0 lg:pl-72">{children}</section>
+
       <MobileBottomNav user={user} />
+
+      <SalesNotifications role={user.role} store={user.store} />
     </main>
   );
 }
