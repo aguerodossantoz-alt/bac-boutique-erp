@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Props = {
   role: "owner" | "admin" | "cashier";
@@ -19,6 +19,7 @@ export function PushNotificationToggle({ role, store }: Props) {
   const [message, setMessage] = useState("");
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   const supported = useMemo(() => {
     return (
@@ -28,6 +29,84 @@ export function PushNotificationToggle({ role, store }: Props) {
       "Notification" in window
     );
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkSubscription() {
+      if (role !== "owner" && role !== "admin") {
+        return;
+      }
+
+      if (!supported) {
+        return;
+      }
+
+      setChecking(true);
+
+      try {
+        if (Notification.permission === "denied") {
+          if (!cancelled) {
+            setEnabled(false);
+            setMessage("Уведомления заблокированы в настройках браузера.");
+          }
+          return;
+        }
+
+        if (Notification.permission !== "granted") {
+          if (!cancelled) {
+            setEnabled(false);
+            setMessage("");
+          }
+          return;
+        }
+
+        const registration = await navigator.serviceWorker.register("/sw.js");
+        const subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+          if (!cancelled) {
+            setEnabled(false);
+            setMessage("");
+          }
+          return;
+        }
+
+        const response = await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            subscription: subscription.toJSON(),
+            role,
+            store,
+          }),
+        });
+
+        if (!cancelled) {
+          setEnabled(true);
+          setMessage("Push-уведомления включены.");
+
+          if (!response.ok) {
+            console.error("Не удалось синхронизировать push-подписку с сервером.");
+          }
+        }
+      } catch (error) {
+        console.error("Ошибка проверки push-подписки:", error);
+      } finally {
+        if (!cancelled) {
+          setChecking(false);
+        }
+      }
+    }
+
+    void checkSubscription();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [role, store, supported]);
 
   if (role !== "owner" && role !== "admin") {
     return null;
@@ -124,10 +203,12 @@ export function PushNotificationToggle({ role, store }: Props) {
         <button
           type="button"
           onClick={enablePush}
-          disabled={loading || enabled}
+          disabled={checking || loading || enabled}
           className="shrink-0 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading
+          {checking
+            ? "Проверяю..."
+            : loading
             ? "Включаю..."
             : enabled
               ? "Включено"
