@@ -72,25 +72,9 @@ export function PushNotificationToggle({ role, store }: Props) {
           return;
         }
 
-        const response = await fetch("/api/push/subscribe", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            subscription: subscription.toJSON(),
-            role,
-            store,
-          }),
-        });
-
         if (!cancelled) {
           setEnabled(true);
           setMessage("Push-уведомления включены.");
-
-          if (!response.ok) {
-            console.error("Не удалось синхронизировать push-подписку с сервером.");
-          }
         }
       } catch (error) {
         console.error("Ошибка проверки push-подписки:", error);
@@ -143,13 +127,18 @@ export function PushNotificationToggle({ role, store }: Props) {
       const existingSubscription =
         await registration.pushManager.getSubscription();
 
-      const subscription =
-        existingSubscription ||
-        (await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
-        }));
+      if (existingSubscription) {
+        setMessage("Удаляю старую push-подписку...");
+        await existingSubscription.unsubscribe();
+      }
 
+      setMessage("Создаю новую push-подписку...");
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+
+      setMessage("Сохраняю подписку на сервере...");
       const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: {
@@ -171,7 +160,9 @@ export function PushNotificationToggle({ role, store }: Props) {
       setMessage("Push-уведомления включены.");
     } catch (error) {
       console.error("Ошибка подключения push:", error);
-      setMessage("Ошибка подключения push-уведомлений.");
+      setMessage(
+        `Ошибка push: ${error instanceof Error ? error.message : String(error)}`
+      );
     } finally {
       setLoading(false);
     }
@@ -203,7 +194,7 @@ export function PushNotificationToggle({ role, store }: Props) {
         <button
           type="button"
           onClick={enablePush}
-          disabled={checking || loading || enabled}
+          disabled={checking || loading}
           className="shrink-0 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {checking
@@ -211,7 +202,7 @@ export function PushNotificationToggle({ role, store }: Props) {
             : loading
             ? "Включаю..."
             : enabled
-              ? "Включено"
+              ? "Обновить"
               : "Включить"}
         </button>
       </div>
