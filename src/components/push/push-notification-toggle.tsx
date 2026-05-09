@@ -108,12 +108,17 @@ export function PushNotificationToggle({ role, store }: Props) {
         return;
       }
 
-      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      const keyResponse = await fetch("/api/push/public-key", {
+        cache: "no-store",
+      });
 
-      if (!publicKey) {
-        setMessage("VAPID ключ не настроен. Проверь .env и перезапусти сервер.");
+      if (!keyResponse.ok) {
+        setMessage("Не удалось получить VAPID public key");
         return;
       }
+
+      const { publicKey } = await keyResponse.json();
+      const cleanPublicKey = String(publicKey || "").trim();
 
       const registration = await navigator.serviceWorker.register("/sw.js");
 
@@ -132,10 +137,22 @@ export function PushNotificationToggle({ role, store }: Props) {
         await existingSubscription.unsubscribe();
       }
 
+      const applicationServerKey = urlBase64ToUint8Array(cleanPublicKey);
+
+      if (
+        applicationServerKey.length !== 65 ||
+        applicationServerKey[0] !== 4
+      ) {
+        setMessage(
+          `Ошибка VAPID public key: bytes=${applicationServerKey.length}, firstByte=${applicationServerKey[0]}`
+        );
+        return;
+      }
+
       setMessage("Создаю новую push-подписку...");
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
+        applicationServerKey,
       });
 
       setMessage("Сохраняю подписку на сервере...");
