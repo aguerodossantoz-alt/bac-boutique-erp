@@ -137,17 +137,19 @@ export function PushNotificationToggle({ role, store }: Props) {
         await existingSubscription.unsubscribe();
       }
 
-      const applicationServerKey = urlBase64ToUint8Array(cleanPublicKey);
+      const keyArray = urlBase64ToUint8Array(cleanPublicKey);
 
-      if (
-        applicationServerKey.length !== 65 ||
-        applicationServerKey[0] !== 4
-      ) {
+      if (keyArray.byteLength !== 65 || keyArray[0] !== 4) {
         setMessage(
-          `Ошибка VAPID public key: bytes=${applicationServerKey.length}, firstByte=${applicationServerKey[0]}`
+          `Ошибка VAPID public key: bytes=${keyArray.byteLength}, firstByte=${keyArray[0]}`
         );
         return;
       }
+
+      const applicationServerKey = keyArray.buffer.slice(
+        keyArray.byteOffset,
+        keyArray.byteOffset + keyArray.byteLength
+      );
 
       setMessage("Создаю новую push-подписку...");
       const subscription = await registration.pushManager.subscribe({
