@@ -119,6 +119,18 @@ export function PushNotificationToggle({ role, store }: Props) {
 
       const { publicKey } = await keyResponse.json();
       const cleanPublicKey = String(publicKey || "").trim();
+      const keyArray = urlBase64ToUint8Array(cleanPublicKey);
+
+      setMessage(
+        `Ключ получен: chars=${cleanPublicKey.length}, bytes=${keyArray.byteLength}, firstByte=${keyArray[0]}, start=${cleanPublicKey.slice(0, 8)}`
+      );
+
+      if (keyArray.byteLength !== 65 || keyArray[0] !== 4) {
+        setMessage(
+          `Ошибка VAPID public key: chars=${cleanPublicKey.length}, bytes=${keyArray.byteLength}, firstByte=${keyArray[0]}, start=${cleanPublicKey.slice(0, 8)}`
+        );
+        return;
+      }
 
       const registration = await navigator.serviceWorker.register("/sw.js");
 
@@ -137,17 +149,7 @@ export function PushNotificationToggle({ role, store }: Props) {
         await existingSubscription.unsubscribe();
       }
 
-      const applicationServerKey = urlBase64ToUint8Array(cleanPublicKey);
-
-      if (
-        applicationServerKey.length !== 65 ||
-        applicationServerKey[0] !== 4
-      ) {
-        setMessage(
-          `Ошибка VAPID public key: bytes=${applicationServerKey.length}, firstByte=${applicationServerKey[0]}`
-        );
-        return;
-      }
+      const applicationServerKey = new Uint8Array(keyArray);
 
       setMessage("Создаю новую push-подписку...");
       const subscription = await registration.pushManager.subscribe({
