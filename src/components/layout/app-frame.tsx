@@ -3,6 +3,7 @@ import { AppSidebar } from "./app-sidebar";
 import { MobileHeader } from "./mobile-header";
 import { MobileBottomNav } from "./mobile-bottom-nav";
 import { SalesNotifications } from "../sales/sales-notifications";
+import { PushNotificationToggle } from "../push/push-notification-toggle";
 
 type AppFrameUser = {
   role: "owner" | "admin" | "cashier";
@@ -28,6 +29,7 @@ export function AppFrame({ children, user }: AppFrameProps) {
 
       <MobileBottomNav user={user} />
 
+      <PushNotificationToggle role={user.role} store={user.store} />
       <SalesNotifications role={user.role} store={user.store} />
     </main>
   );
