@@ -168,11 +168,38 @@ export async function PATCH(
 
     const existingSale = await prisma.sale.findUnique({
       where: { id: saleId },
-      select: { id: true },
+      select: {
+        id: true,
+        saleItems: {
+          select: {
+            store: true,
+          },
+        },
+      },
     });
 
     if (!existingSale) {
       return NextResponse.json({ error: "Продажа не найдена." }, { status: 404 });
+    }
+
+    if (sessionUser.role === "cashier") {
+      if (!sessionUser.store) {
+        return NextResponse.json(
+          { error: "У кассира не назначен магазин." },
+          { status: 403 }
+        );
+      }
+
+      const hasAccessToSale = existingSale.saleItems.some(
+        (item) => String(item.store ?? "").trim() === sessionUser.store
+      );
+
+      if (!hasAccessToSale) {
+        return NextResponse.json(
+          { error: "Нет доступа к этой продаже." },
+          { status: 403 }
+        );
+      }
     }
 
     const sale = await prisma.sale.update({
