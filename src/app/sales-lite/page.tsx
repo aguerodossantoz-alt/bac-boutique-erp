@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { InternalSaleReceiptModal } from "@/components/sales/internal-sale-receipt-modal";
 
 type RawProduct = Record<string, unknown>;
 
@@ -329,6 +330,7 @@ export default function SalesLitePage() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [user, setUser] = useState<SessionUser | null>(null);
   const [selectedStore, setSelectedStore] = useState("Магазин 1");
+  const [receiptSale, setReceiptSale] = useState<any | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -365,7 +367,7 @@ export default function SalesLitePage() {
 
     loadSession();
 
-    return () => {
+  return () => {
       mounted = false;
     };
   }, []);
@@ -604,6 +606,32 @@ export default function SalesLitePage() {
         });
 
         if (response.ok) {
+          const result = await response.json();
+
+          const receiptSnapshot = {
+            ...(result?.sale || {}),
+            id: result?.sale?.id,
+            createdAt: result?.sale?.createdAt || new Date().toISOString(),
+            store: currentStore,
+            cashier: user?.username || user?.name || "cashier",
+            paymentMethod: "наличные",
+            itemsCount: items.reduce((sum, item) => sum + item.qty, 0),
+            subtotal,
+            discountPercent: discount,
+            discountAmount,
+            total,
+            lines: items.map((item) => ({
+              name: item.name,
+              article: item.article,
+              barcode: item.barcode,
+              qty: item.qty,
+              unitPrice: item.price,
+              lineTotal: Math.round(item.price * item.qty * (1 - discount / 100)),
+              store: item.store,
+            })),
+          };
+
+          setReceiptSale(receiptSnapshot);
           setItems([]);
           setDiscountPercent("0");
           setMessage(`Продажа сохранена в магазин: ${currentStore}`);
@@ -621,6 +649,16 @@ export default function SalesLitePage() {
     } finally {
       setSelling(false);
     }
+  }
+
+  async function markPrinted(saleId: number) {
+    if (!saleId) return;
+
+    await fetch(`/api/sales/${saleId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "mark-internal-receipt-printed" }),
+    });
   }
 
   return (
@@ -870,6 +908,22 @@ export default function SalesLitePage() {
           </div>
         </div>
       </div>
+      <InternalSaleReceiptModal
+        isOpen={Boolean(receiptSale)}
+        saleId={receiptSale?.id || 0}
+        createdAt={receiptSale?.createdAt || new Date().toISOString()}
+        store={receiptSale?.store || currentStore}
+        cashier={receiptSale?.cashier || user?.username || user?.name || "cashier"}
+        paymentMethod={receiptSale?.paymentMethod || "наличные"}
+        itemsCount={receiptSale?.itemsCount || 0}
+        subtotal={receiptSale?.subtotal || subtotal}
+        discountPercent={receiptSale?.discountPercent || discount}
+        discountAmount={receiptSale?.discountAmount || discountAmount}
+        total={receiptSale?.total || total}
+        lines={receiptSale?.lines || []}
+        onPrinted={() => markPrinted(receiptSale?.id || 0)}
+        onClose={() => setReceiptSale(null)}
+      />
     </main>
   );
 }

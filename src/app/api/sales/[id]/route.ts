@@ -142,3 +142,48 @@ export async function DELETE(
     );
   }
 }
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    const sessionUser = getSessionUser(session);
+
+    if (!(session as { user?: unknown } | null)?.user || !sessionUser.username) {
+      return NextResponse.json({ error: "Не авторизован." }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const saleId = Number(id);
+
+    if (!Number.isFinite(saleId)) {
+      return NextResponse.json({ error: "Некорректный id продажи." }, { status: 400 });
+    }
+
+    const body = await request.json();
+    if (body?.action !== "mark-internal-receipt-printed") {
+      return NextResponse.json({ error: "Неизвестное действие." }, { status: 400 });
+    }
+
+    const existingSale = await prisma.sale.findUnique({
+      where: { id: saleId },
+      select: { id: true },
+    });
+
+    if (!existingSale) {
+      return NextResponse.json({ error: "Продажа не найдена." }, { status: 404 });
+    }
+
+    const sale = await prisma.sale.update({
+      where: { id: saleId },
+      data: { internalReceiptPrintedAt: new Date() },
+      select: { id: true, internalReceiptPrintedAt: true },
+    });
+
+    return NextResponse.json({ ok: true, sale: { id: sale.id, internalReceiptPrintedAt: sale.internalReceiptPrintedAt?.toISOString() ?? null } });
+  } catch (error) {
+    console.error("Ошибка печати внутреннего чека:", error);
+    return NextResponse.json({ error: "Не удалось отметить печать чека." }, { status: 500 });
+  }
+}

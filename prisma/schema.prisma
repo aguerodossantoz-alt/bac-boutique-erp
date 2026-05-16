@@ -43,10 +43,11 @@ model Product {
 }
 
 model Sale {
-  id        Int        @id @default(autoincrement())
-  total     Float
-  createdAt DateTime   @default(now())
-  saleItems SaleItem[]
+  id                       Int        @id @default(autoincrement())
+  total                    Float
+  createdAt                DateTime   @default(now())
+  internalReceiptPrintedAt DateTime?
+  saleItems                SaleItem[]
 }
 
 model SaleItem {
