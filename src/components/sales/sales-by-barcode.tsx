@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { InternalSaleReceiptModal } from "@/components/sales/internal-sale-receipt-modal";
 
 type ProductRow = {
   id: number;
@@ -29,6 +30,7 @@ type CartItem = {
 };
 
 type RecentSale = {
+  internalReceiptPrintedAt?: string | null;
   id: number;
   total: number;
   createdAt: string;
@@ -102,6 +104,7 @@ export function SalesByBarcode({ role, store }: SalesByBarcodeProps) {
   
   );
   const [expandedSaleId, setExpandedSaleId] = useState<number | null>(null);
+  const [receiptSale, setReceiptSale] = useState<any | null>(null);
   const barcodeInputRef = useRef<HTMLInputElement | null>(null);
   const boundStore = store ?? "";
 
@@ -414,6 +417,40 @@ const discountedCartTotal = useMemo(() => {
         throw new Error(result?.error || "Не удалось завершить продажу.");
       }
 
+      const receiptSubtotal = cart.reduce(
+        (sum, item) => sum + item.unitPrice * item.qty,
+        0
+      );
+      const receiptTotal = discountedCartTotal;
+      const receiptDiscountAmount = Math.max(0, receiptSubtotal - receiptTotal);
+      const factor = 1 - discountValue / 100;
+
+      const receiptSnapshot = {
+        ...(result?.sale || {}),
+        id: result?.sale?.id,
+        createdAt: result?.sale?.createdAt || new Date().toISOString(),
+        store: effectiveStore,
+        cashier: "cashier",
+        paymentMethod: "наличные",
+        itemsCount: cart.reduce((sum, item) => sum + item.qty, 0),
+        subtotal: receiptSubtotal,
+        discountPercent: discountValue,
+        discountAmount: receiptDiscountAmount,
+        total: receiptTotal,
+        lines: cart.map((item) => ({
+          name: item.name,
+          article: "",
+          size: "",
+          color: "",
+          barcode: item.barcode,
+          qty: item.qty,
+          unitPrice: item.unitPrice,
+          lineTotal: roundMoney(item.unitPrice * item.qty * factor),
+          store: item.store,
+        })),
+      };
+
+      setReceiptSale(receiptSnapshot);
       setCart([]);
       setQuery("");
       setQtyInput("1");
@@ -438,6 +475,18 @@ const discountedCartTotal = useMemo(() => {
   function toggleSale(saleId: number) {
   setExpandedSaleId((prev) => (prev === saleId ? null : saleId));
 }
+  async function markPrinted(saleId: number) {
+    if (!saleId) return;
+
+    await fetch(`/api/sales/${saleId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "mark-internal-receipt-printed" }),
+    });
+
+    await loadSalesHistory();
+  }
+
   async function cancelSale(saleId: number) {
     const confirmed = window.confirm(
       `Отменить продажу #${saleId}? Остатки вернутся обратно.`
@@ -882,6 +931,29 @@ const discountedCartTotal = useMemo(() => {
                   >
                     {isCancellingSaleId === sale.id ? "Отмена..." : "Отменить"}
                   </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setReceiptSale({
+                          id: sale.id,
+                          createdAt: sale.createdAt,
+                          itemsCount: sale.itemsCount,
+                          total: sale.total,
+                          subtotal: sale.total,
+                          discountPercent: 0,
+                          discountAmount: 0,
+                          cashier: "cashier",
+                          paymentMethod: "наличные",
+                          store: sale.lines[0]?.store || effectiveStore,
+                          lines: sale.lines.map((line) => ({ ...line, article: "", size: "", color: "" })),
+                        });
+                      }}
+                      className="rounded-xl border border-sky-400/20 bg-sky-500/10 px-3 py-2 text-xs text-sky-200"
+                    >
+                      Печать чека
+                    </button>
+
                 </div>
               </div>
             </div>
@@ -894,6 +966,22 @@ const discountedCartTotal = useMemo(() => {
           )}
         </div>
       </div>
+      <InternalSaleReceiptModal
+        isOpen={Boolean(receiptSale)}
+        saleId={receiptSale?.id || 0}
+        createdAt={receiptSale?.createdAt || new Date().toISOString()}
+        store={receiptSale?.store || effectiveStore}
+        cashier={receiptSale?.cashier || "cashier"}
+        paymentMethod={receiptSale?.paymentMethod || "наличные"}
+        itemsCount={receiptSale?.itemsCount || 0}
+        subtotal={receiptSale?.subtotal || receiptSale?.total || 0}
+        discountPercent={receiptSale?.discountPercent || 0}
+        discountAmount={receiptSale?.discountAmount || 0}
+        total={receiptSale?.total || 0}
+        lines={receiptSale?.lines || []}
+        onPrinted={() => markPrinted(receiptSale?.id || 0)}
+        onClose={() => setReceiptSale(null)}
+      />
     </div>
   );
 }
