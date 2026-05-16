@@ -182,8 +182,18 @@ export async function PATCH(
       return NextResponse.json({ error: "Продажа не найдена." }, { status: 404 });
     }
 
-    if (sessionUser.role === "cashier") {
-      if (!sessionUser.store) {
+    const role = String(sessionUser.role || "").toLowerCase();
+    const userStore = String(sessionUser.store || "").trim();
+
+    if (role !== "owner" && role !== "admin") {
+      if (role !== "cashier") {
+        return NextResponse.json(
+          { error: "Нет доступа к этой продаже." },
+          { status: 403 }
+        );
+      }
+
+      if (!userStore) {
         return NextResponse.json(
           { error: "У кассира не назначен магазин." },
           { status: 403 }
@@ -191,7 +201,7 @@ export async function PATCH(
       }
 
       const hasAccessToSale = existingSale.saleItems.some(
-        (item) => String(item.store ?? "").trim() === sessionUser.store
+        (item) => String(item.store ?? "").trim() === userStore
       );
 
       if (!hasAccessToSale) {
