@@ -49,6 +49,13 @@ const users = [
     role: "CASHIER",
     store: "Магазин 2",
   },
+  {
+    username: "khamzat",
+    password: "khamzat",
+    displayName: "Хамзат",
+    role: "MANAGER",
+    store: "Магазин 2",
+  },
 ];
 
 async function main() {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
-type AppRole = "owner" | "admin" | "cashier";
+type AppRole = "owner" | "admin" | "manager" | "cashier";
 
 function toText(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -14,6 +14,7 @@ function normalizeRole(value: unknown): AppRole {
 
   if (raw === "owner") return "owner";
   if (raw === "admin") return "admin";
+  if (raw === "manager") return "manager";
   return "cashier";
 }
 
@@ -84,6 +85,14 @@ export async function GET(request: NextRequest) {
       }
 
       where = { store: sessionUser.store };
+    } else if (sessionUser.role === "manager") {
+      if (!sessionUser.store) {
+        return NextResponse.json(
+          { error: "У менеджера не назначен магазин." },
+          { status: 403 }
+        );
+      }
+      where = { store: sessionUser.store };
     } else {
       where =
         requestedStore && requestedStore !== "Все магазины"
@@ -150,6 +159,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    const requestedStore = String(body?.store ?? "").trim();
+
+    if (sessionUser.role === "manager" && !sessionUser.store) {
+      return NextResponse.json(
+        { error: "У менеджера не назначен магазин." },
+        { status: 403 }
+      );
+    }
 
     const barcode = String(body?.barcode ?? "").trim();
     const article = String(body?.article ?? "").trim();
@@ -158,7 +175,10 @@ export async function POST(request: NextRequest) {
     const purchasePriceRaw = String(body?.purchase_price ?? "").trim();
     const retailPriceRaw = String(body?.retail_price ?? "").trim();
     const stockQtyRaw = String(body?.stock_qty ?? "").trim();
-    const store = String(body?.store ?? "").trim() || "Магазин 1";
+    const store =
+      sessionUser.role === "manager"
+        ? sessionUser.store
+        : requestedStore || "Магазин 1";
     const itemStatus =
       String(body?.item_status ?? "").trim() || "READY_FOR_SALE";
 

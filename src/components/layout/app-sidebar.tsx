@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
-type AppRole = "owner" | "admin" | "cashier";
+type AppRole = "owner" | "admin" | "manager" | "cashier";
 
 type SidebarUser = {
   role: AppRole;
@@ -24,6 +24,14 @@ export function AppSidebar({ user }: { user: SidebarUser }) {
   const navItems: NavItem[] =
     user.role === "cashier"
       ? [{ label: "Продажи", href: "/sales" }]
+      : user.role === "manager"
+      ? [
+          { label: "Дашборд", href: "/" },
+          { label: "Каталог", href: "/catalog" },
+          { label: "Продажи", href: "/sales" },
+          { label: "Инвентаризация", href: "/inventory" },
+          { label: "Расходы", href: "/expenses" },
+        ]
       : [
           { label: "Дашборд", href: "/" },
           { label: "Каталог", href: "/catalog" },
@@ -39,12 +47,16 @@ export function AppSidebar({ user }: { user: SidebarUser }) {
       ? "Хозяин / полный доступ"
       : user.role === "admin"
       ? "Администратор / полный доступ"
+      : user.role === "manager"
+      ? `Управляющий / ${user.store || "свой магазин"}`
       : user.store
       ? `Кассир / ${user.store}`
       : "Кассир";
 
   const accessLabel =
-    user.role === "cashier" ? user.store || "Только свой магазин" : "Все магазины";
+    user.role === "owner" || user.role === "admin"
+      ? "Все магазины"
+      : user.store || "Только свой магазин";
 
   const displayName = user.displayName?.trim() || user.username || "Пользователь";
 

@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
-type AppRole = "owner" | "admin" | "cashier";
+type AppRole = "owner" | "admin" | "manager" | "cashier";
 
 function normalizeRole(value: unknown): AppRole {
   const raw = String(value ?? "").trim().toUpperCase();
@@ -11,6 +11,7 @@ function normalizeRole(value: unknown): AppRole {
   if (raw === "OWNER") return "owner";
   if (raw === "ADMIN") return "admin";
   if (raw === "CASHIER") return "cashier";
+  if (raw === "MANAGER") return "manager";
 
   return "cashier";
 }

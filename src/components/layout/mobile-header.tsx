@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 
 type MobileHeaderUser = {
-  role: "owner" | "admin" | "cashier";
+  role: "owner" | "admin" | "manager" | "cashier";
   username: string;
   store: string;
   displayName?: string;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 type MobileNavUser = {
-  role: "owner" | "admin" | "cashier";
+  role: "owner" | "admin" | "manager" | "cashier";
 };
 
 export function MobileBottomNav({ user }: { user: MobileNavUser }) {
@@ -14,6 +14,14 @@ export function MobileBottomNav({ user }: { user: MobileNavUser }) {
     user.role === "cashier"
       ? [{ label: "Продажи", href: "/sales" },
           { label: "Расходы", href: "/expenses" }]
+      : user.role === "manager"
+      ? [
+          { label: "Дашборд", href: "/" },
+          { label: "Каталог", href: "/catalog" },
+          { label: "Продажи", href: "/sales" },
+          { label: "Инвентаризация", href: "/inventory" },
+          { label: "Расходы", href: "/expenses" },
+        ]
       : [
           { label: "Дашборд", href: "/" },
           { label: "Каталог", href: "/catalog" },

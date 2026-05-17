@@ -1,11 +1,11 @@
 import { CatalogImportedView } from "@/components/catalog/catalog-imported-view";
 import { AppFrame } from "@/components/layout/app-frame";
-import { requireOwnerOrAdmin } from "@/lib/access";
+import { requireOwnerAdminOrManager } from "@/lib/access";
 
 export const dynamic = "force-dynamic";
 
 export default async function CatalogPage() {
-  const user = await requireOwnerOrAdmin();
+  const user = await requireOwnerAdminOrManager();
 
   return (
     <AppFrame

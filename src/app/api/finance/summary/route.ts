@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 function getMonthRange(month: string | null) {
   const now = new Date();
@@ -26,6 +27,18 @@ function toStore(value: string | null | undefined) {
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth();
+    const role = String((session as { user?: { role?: string } } | null)?.user?.role ?? "").toLowerCase();
+    const username = String((session as { user?: { username?: string } } | null)?.user?.username ?? "").trim();
+
+    if (!(session as { user?: unknown } | null)?.user || !username) {
+      return NextResponse.json({ error: "Не авторизован." }, { status: 401 });
+    }
+
+    if (role !== "owner" && role !== "admin") {
+      return NextResponse.json({ error: "Недостаточно прав." }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const { start, end, monthKey } = getMonthRange(searchParams.get("month"));
 

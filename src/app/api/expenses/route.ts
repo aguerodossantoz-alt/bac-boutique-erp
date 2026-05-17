@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
-type AppRole = "owner" | "admin" | "cashier";
+type AppRole = "owner" | "admin" | "manager" | "cashier";
 
 type ExpenseBody = {
   title?: string;
@@ -18,6 +18,7 @@ function normalizeRole(value: unknown): AppRole {
 
   if (raw === "owner") return "owner";
   if (raw === "admin") return "admin";
+  if (raw === "manager") return "manager";
   return "cashier";
 }
 
@@ -97,14 +98,26 @@ export async function GET(request: NextRequest) {
     const { start, end, monthKey } = getMonthRange(searchParams.get("month"));
     const requestedStore = String(searchParams.get("store") ?? "").trim();
 
+    if (sessionUser.role === "manager" && !sessionUser.store) {
+      return NextResponse.json(
+        { error: "У менеджера не назначен магазин." },
+        { status: 403 }
+      );
+    }
+
+    const enforcedStore =
+      sessionUser.role === "manager"
+        ? sessionUser.store
+        : requestedStore && requestedStore !== "Все магазины"
+        ? requestedStore
+        : "";
+
     const where = {
       date: {
         gte: start,
         lt: end,
       },
-      ...(requestedStore && requestedStore !== "Все магазины"
-        ? { store: requestedStore }
-        : {}),
+      ...(enforcedStore ? { store: enforcedStore } : {}),
     };
 
     const expenses = await prisma.expense.findMany({
@@ -174,7 +187,11 @@ export async function POST(request: Request) {
 
     const title = String(body.title ?? "").trim();
     const category = String(body.category ?? "").trim() || "Прочее";
-    const store = String(body.store ?? "").trim() || null;
+    const requestedStore = String(body.store ?? "").trim();
+    const store =
+      sessionUser.role === "manager"
+        ? sessionUser.store || null
+        : requestedStore || null;
     const comment = String(body.comment ?? "").trim() || null;
     const amount = toNumber(body.amount);
     const dateText = String(body.date ?? "").trim();
@@ -190,6 +207,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Введите корректную сумму расхода." },
         { status: 400 }
+      );
+    }
+
+    if (sessionUser.role === "manager" && !sessionUser.store) {
+      return NextResponse.json(
+        { error: "У менеджера не назначен магазин." },
+        { status: 403 }
       );
     }
 

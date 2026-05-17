@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { sendSalePushNotification } from "@/lib/web-push";
 
-type AppRole = "owner" | "admin" | "cashier";
+type AppRole = "owner" | "admin" | "manager" | "cashier";
 
 type SaleRequestItem = {
   productId?: number;
@@ -18,6 +18,7 @@ function normalizeRole(value: unknown): AppRole {
 
   if (raw === "owner") return "owner";
   if (raw === "admin") return "admin";
+  if (raw === "manager") return "manager";
   return "cashier";
 }
 
@@ -101,6 +102,18 @@ export async function GET(request: NextRequest) {
           some: { store: sessionUser.store },
         },
       };
+    } else if (sessionUser.role === "manager") {
+      if (!sessionUser.store) {
+        return NextResponse.json(
+          { error: "У менеджера не назначен магазин." },
+          { status: 403 }
+        );
+      }
+      where = {
+        saleItems: {
+          some: { store: sessionUser.store },
+        },
+      };
     } else {
       where =
         requestedStore && requestedStore !== "Все магазины"
@@ -179,6 +192,12 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
+    if (sessionUser.role === "manager" && !sessionUser.store) {
+      return NextResponse.json(
+        { error: "У менеджера не назначен магазин." },
+        { status: 403 }
+      );
+    }
 
     const body = await request.json();
     const items = Array.isArray(body?.items)
@@ -226,7 +245,7 @@ export async function POST(request: Request) {
             throw new Error("Не передан barcode или productId.");
           }
 
-          if (sessionUser.role === "cashier") {
+          if (sessionUser.role === "cashier" || sessionUser.role === "manager") {
             product = await tx.product.findFirst({
               where: {
                 barcode,
@@ -251,8 +270,11 @@ export async function POST(request: Request) {
           throw new Error("Один из товаров не найден в Product.");
         }
 
-        if (sessionUser.role === "cashier" && product.store !== sessionUser.store) {
-          throw new Error("Кассир не может продавать товар чужого магазина.");
+        if (
+          (sessionUser.role === "cashier" || sessionUser.role === "manager") &&
+          product.store !== sessionUser.store
+        ) {
+          throw new Error("Пользователь не может продавать товар чужого магазина.");
         }
 
         if (product.itemStatus !== "READY_FOR_SALE") {
@@ -274,7 +296,7 @@ export async function POST(request: Request) {
         }
 
         const lineStore =
-          sessionUser.role === "cashier"
+          sessionUser.role === "cashier" || sessionUser.role === "manager"
             ? sessionUser.store
             : rawStore || product.store || null;
 

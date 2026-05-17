@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
-type AppRole = "owner" | "admin" | "cashier";
+type AppRole = "owner" | "admin" | "manager" | "cashier";
 
 type CommitItem = {
   productId?: number;
@@ -14,6 +14,7 @@ function normalizeRole(value: unknown): AppRole {
 
   if (raw === "owner") return "owner";
   if (raw === "admin") return "admin";
+  if (raw === "manager") return "manager";
   return "cashier";
 }
 
@@ -99,6 +100,10 @@ export async function POST(request: Request) {
 
         if (!product) {
           throw new Error(`Товар с id ${productId} не найден.`);
+        }
+
+        if (sessionUser.role === "manager" && product.store !== sessionUser.store) {
+          throw new Error("Менеджер не может обновлять остатки чужого магазина.");
         }
 
         await tx.product.update({
