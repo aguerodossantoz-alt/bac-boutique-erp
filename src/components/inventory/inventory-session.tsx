@@ -15,6 +15,8 @@ type ProductRow = {
   item_status: string;
 };
 
+type InventoryMode = "quick" | "full";
+
 type InventoryLine = {
   productId: number;
   barcode: string;
@@ -61,8 +63,9 @@ export function InventorySession({
     isManager ? userStore : "Магазин 1"
   );
   const [isFinishing, setIsFinishing] = useState(false);
+  const [inventoryMode, setInventoryMode] = useState<InventoryMode>("quick");
   const barcodeInputRef = useRef<HTMLInputElement | null>(null);
-  const storageKey = `${INVENTORY_SESSION_KEY}-${currentStore}`;
+  const storageKey = `${INVENTORY_SESSION_KEY}-${currentStore}-${inventoryMode}`;
 
 async function loadProducts() {
   try {
@@ -94,6 +97,12 @@ useEffect(() => {
   setMessage("");
   loadProducts();
 }, [currentStore]);
+
+useEffect(() => {
+  setQuery("");
+  setFactQty("0");
+  setMessage("");
+}, [inventoryMode]);
 
 useEffect(() => {
   barcodeInputRef.current?.focus();
@@ -157,6 +166,31 @@ useEffect(() => {
       unchanged,
     };
   }, [sessionLines]);
+
+
+
+  function buildFullSessionLines(rows: ProductRow[]) {
+    return rows.map((product) => {
+      const beforeQty = parseNullableInt(product.stock_qty);
+      return {
+        productId: product.id,
+        barcode: product.barcode,
+        name: product.name,
+        article: product.article,
+        store: product.store,
+        beforeQty,
+        factQty: 0,
+        difference: beforeQty === null ? null : 0 - beforeQty,
+      } satisfies InventoryLine;
+    });
+  }
+
+  function startFullRevision() {
+    const next = buildFullSessionLines(products);
+    setSessionLines(next);
+    localStorage.setItem(storageKey, JSON.stringify(next));
+    setMessage(`Полная ревизия начата. Загружено товаров: ${next.length}.`);
+  }
 
   function onSearchEnter(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter") {
@@ -238,6 +272,7 @@ useEffect(() => {
   }
 
   function removeLine(productId: number) {
+    if (inventoryMode === "full") return;
     setSessionLines((prev) => {
       const next = prev.filter((line) => line.productId !== productId);
       localStorage.setItem(storageKey, JSON.stringify(next));
@@ -249,6 +284,25 @@ useEffect(() => {
     if (sessionLines.length === 0) {
       setMessage("Сессия инвентаризации пустая.");
       return;
+    }
+
+    if (
+      inventoryMode === "full" &&
+      products.length > 0 &&
+      sessionLines.length < products.length
+    ) {
+      setMessage(
+        "Сначала нажмите «Начать полную ревизию», чтобы загрузить все товары магазина."
+      );
+      return;
+    }
+
+    if (inventoryMode === "full") {
+      const isConfirmed = window.confirm(
+        "Полная ревизия обновит остатки ВСЕХ товаров выбранного магазина. Товары, которые не были отсканированы, получат остаток 0. Завершать ревизию только если весь магазин уже просканирован. Продолжить?"
+      );
+
+      if (!isConfirmed) return;
     }
 
     try {
@@ -313,6 +367,22 @@ useEffect(() => {
         </div>
 
         <div className="flex flex-wrap gap-3">
+          <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#090909] p-1">
+            <button
+              type="button"
+              onClick={() => setInventoryMode("quick")}
+              className={`rounded-xl px-3 py-2 text-xs transition ${inventoryMode === "quick" ? "bg-white/[0.08] text-white" : "text-zinc-400 hover:text-zinc-200"}`}
+            >
+              Быстрая инвентаризация
+            </button>
+            <button
+              type="button"
+              onClick={() => setInventoryMode("full")}
+              className={`rounded-xl px-3 py-2 text-xs transition ${inventoryMode === "full" ? "bg-white/[0.08] text-white" : "text-zinc-400 hover:text-zinc-200"}`}
+            >
+              Полная ревизия
+            </button>
+          </div>
           <select
             value={currentStore}
             onChange={(event) => setCurrentStore(event.target.value)}
@@ -329,10 +399,16 @@ useEffect(() => {
           <button
             type="button"
             onClick={finishInventory}
-            disabled={sessionLines.length === 0 || isFinishing}
+            disabled={
+              sessionLines.length === 0 ||
+              isFinishing ||
+              (inventoryMode === "full" &&
+                products.length > 0 &&
+                sessionLines.length < products.length)
+            }
             className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-4 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isFinishing ? "Завершение..." : "Завершить инвентаризацию"}
+            {isFinishing ? "Завершение..." : inventoryMode === "full" ? "Завершить полную ревизию" : "Завершить инвентаризацию"}
           </button>
         </div>
       </div>
@@ -409,7 +485,7 @@ useEffect(() => {
           </button>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
             onClick={saveLine}
@@ -417,6 +493,15 @@ useEffect(() => {
           >
             Сохранить
           </button>
+          {inventoryMode === "full" && (
+            <button
+              type="button"
+              onClick={startFullRevision}
+              className="rounded-2xl border border-sky-400/20 bg-sky-500/10 px-5 py-4 text-sm font-medium text-sky-300 transition hover:bg-sky-500/20"
+            >
+              Начать полную ревизию
+            </button>
+          )}
         </div>
 
         <div className="mt-5 rounded-2xl border border-white/10 bg-[#090909] p-4">
@@ -509,7 +594,8 @@ useEffect(() => {
                     <button
                       type="button"
                       onClick={() => removeLine(line.productId)}
-                      className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs text-red-300 transition hover:bg-red-500/20"
+                      disabled={inventoryMode === "full"}
+                      className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Убрать
                     </button>
