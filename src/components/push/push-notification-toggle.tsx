@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 type Props = {
-  role: "owner" | "admin" | "cashier";
+  role: "owner" | "admin" | "manager" | "cashier";
   store: string;
 };
 

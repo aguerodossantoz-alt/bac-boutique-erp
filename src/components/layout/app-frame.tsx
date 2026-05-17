@@ -6,7 +6,7 @@ import { SalesNotifications } from "@/components/sales/sales-notifications";
 import { PushNotificationToggle } from "@/components/push/push-notification-toggle";
 
 type AppFrameUser = {
-  role: "owner" | "admin" | "cashier";
+  role: "owner" | "admin" | "manager" | "cashier";
   username: string;
   store: string;
   displayName?: string;
