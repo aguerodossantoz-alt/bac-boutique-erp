@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type SalesNotificationsProps = {
-  role: "owner" | "admin" | "cashier";
+  role: "owner" | "admin" | "manager" | "cashier";
   store: string;
 };
 
