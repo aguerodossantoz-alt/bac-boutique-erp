@@ -32,50 +32,64 @@ function formatMoney(value: number): string {
   return `${new Intl.NumberFormat("ru-RU").format(Math.round(value || 0))} ₽`;
 }
 
+function resolveReceiptStore(store: string): string {
+  const value = String(store ?? "").trim();
+  if (value === "Магазин 1") return "BAC BOUTIQUE";
+  if (value === "Магазин 2") return "MEN OUTFIT";
+  return value || "BAC BOUTIQUE";
+}
+
+function hasText(value?: string): boolean {
+  const text = String(value ?? "").trim();
+  return Boolean(text && text !== "—");
+}
+
 export function InternalSaleReceiptModal(props: Props) {
   if (!props.isOpen) return null;
 
-  const shortLines = props.lines.slice(0, 2);
-  const extraLines = Math.max(0, props.lines.length - shortLines.length);
+  const receiptStore = resolveReceiptStore(props.store);
 
   return (
     <div className="fixed inset-0 z-[120] bg-black/80 p-4 receipt-print-shell">
       <div className="mx-auto max-w-md rounded-2xl border border-white/10 bg-[#111] p-4 receipt-print-card">
         <div className="mb-3 text-lg font-semibold no-print">Внутренний чек продажи</div>
 
-        <div className="receipt-label rounded border border-dashed border-zinc-300 bg-white text-black">
-          <div className="text-center text-[10px] font-bold">BAC</div>
-          <div className="text-center text-[10px] font-bold">ВНУТРЕННИЙ ЧЕК</div>
-          <div className="mt-1">{props.store}</div>
-          <div>Продажа #{props.saleId}</div>
-          <div>{new Date(props.createdAt).toLocaleString("ru-RU")}</div>
+        <div className="receipt-label bg-white text-black">
+          <div className="text-center text-[11px] font-bold tracking-wide">{receiptStore}</div>
+          <div className="mt-1 text-center text-[10px] font-semibold tracking-[0.08em]">ВНУТРЕННИЙ ЧЕК</div>
+          <div className="my-2 border-t border-black" />
+
+          <div>Продажа № {props.saleId}</div>
+          <div>Дата: {new Date(props.createdAt).toLocaleString("ru-RU")}</div>
           <div>Кассир: {props.cashier}</div>
           <div>Товаров: {props.itemsCount}</div>
+
+          <div className="my-2 border-t border-black" />
+
+          <div className="font-semibold">Товары:</div>
+          <div className="mt-1 space-y-1">
+            {props.lines.map((line, idx) => (
+              <div key={`${line.name}-${line.barcode || idx}`}>
+                <div>{line.name}</div>
+                <div className="text-[8px] leading-tight">
+                  {hasText(line.barcode) ? <div>ШК: {line.barcode}</div> : null}
+                  {hasText(line.article) ? <div>Арт: {line.article}</div> : null}
+                  {hasText(line.size) ? <div>Размер: {line.size}</div> : null}
+                  {hasText(line.color) ? <div>Цвет: {line.color}</div> : null}
+                </div>
+                <div>{formatMoney(line.unitPrice)} × {line.qty} = {formatMoney(line.lineTotal)}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="my-2 border-t border-black" />
+
           <div>До скидки: {formatMoney(props.subtotal)}</div>
           <div>Скидка {props.discountPercent}%: -{formatMoney(props.discountAmount)}</div>
-          <div className="font-semibold">Итог: {formatMoney(props.total)}</div>
           <div>Оплата: {props.paymentMethod}</div>
+          <div className="mt-1 text-[11px] font-extrabold tracking-wide">ИТОГО: {formatMoney(props.total)}</div>
 
-          {props.lines.length === 1 ? (
-            <div className="mt-1 border-t border-black pt-1">
-              <div>{props.lines[0].name}</div>
-              <div>Арт: {props.lines[0].article || "—"}</div>
-              <div>Размер: {props.lines[0].size || "—"}</div>
-              <div>Цвет: {props.lines[0].color || "—"}</div>
-              <div>ШК: {props.lines[0].barcode || "—"}</div>
-              <div>Цена: {formatMoney(props.lines[0].unitPrice)}</div>
-              <div>Итог: {formatMoney(props.lines[0].lineTotal)}</div>
-            </div>
-          ) : (
-            <div className="mt-1 border-t border-black pt-1">
-              {shortLines.map((line, idx) => (
-                <div key={`${line.barcode || line.name}-${idx}`}>{line.name}</div>
-              ))}
-              {extraLines > 0 ? <div>+ ещё {extraLines} тов.</div> : null}
-            </div>
-          )}
-
-          <div className="mt-1 text-center">Спасибо за покупку</div>
+          <div className="mt-3 text-center">Спасибо за покупку</div>
         </div>
 
         <div className="mt-3 flex gap-2 no-print">

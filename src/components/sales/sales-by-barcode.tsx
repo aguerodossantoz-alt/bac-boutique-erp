@@ -185,6 +185,11 @@ const allowedStores =
     setCurrentStore(boundStore);
   }
   }, [role, boundStore, currentStore]);
+  useEffect(() => {
+    if ((role === "owner" || role === "admin") && (!currentStore || currentStore === "Все магазины")) {
+      setCurrentStore("Магазин 1");
+    }
+  }, [role, currentStore]);
   const matchedProducts = useMemo(() => {
     const search = query.trim().toLowerCase();
     if (!search) return [];

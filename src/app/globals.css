@@ -52,7 +52,7 @@ textarea {
 
 @media print {
   @page {
-    size: 58mm 60mm;
+    size: 58mm 90mm;
     margin: 0;
   }
 
@@ -76,16 +76,18 @@ textarea {
     left: 0;
     top: 0;
     width: 58mm;
-    height: 60mm;
+    min-height: 90mm;
+    height: auto;
     padding: 2mm;
     box-sizing: border-box;
     font-size: 9px;
     line-height: 1.15;
     color: #000;
     background: #fff;
-    overflow: hidden;
+    overflow: visible;
     border: none !important;
     border-radius: 0 !important;
+    box-shadow: none !important;
   }
 
   .receipt-print-shell,
