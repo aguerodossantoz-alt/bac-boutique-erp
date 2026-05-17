@@ -47,7 +47,7 @@ type RecentSale = {
   }>;
 };
 type SalesByBarcodeProps = {
-  role: "owner" | "admin" | "cashier";
+  role: "owner" | "admin" | "manager" | "cashier";
   store: string;
 };
 const STORE_OPTIONS = ["Магазин 1", "Магазин 2"];
@@ -109,10 +109,10 @@ export function SalesByBarcode({ role, store }: SalesByBarcodeProps) {
   const boundStore = store ?? "";
 
 const effectiveStore =
-  role === "cashier" && boundStore ? boundStore : currentStore;
+  (role === "cashier" || role === "manager") && boundStore ? boundStore : currentStore;
 
 const allowedStores =
-  role === "cashier" && boundStore ? [boundStore] : STORE_OPTIONS;
+  (role === "cashier" || role === "manager") && boundStore ? [boundStore] : STORE_OPTIONS;
   async function loadProductsFromDbFirst() {
     try {
       const response = await fetch(
@@ -181,7 +181,7 @@ const allowedStores =
     barcodeInputRef.current?.focus();
   }, []);
   useEffect(() => {
-  if (role === "cashier" && boundStore && currentStore !== boundStore) {
+  if ((role === "cashier" || role === "manager") && boundStore && currentStore !== boundStore) {
     setCurrentStore(boundStore);
   }
   }, [role, boundStore, currentStore]);

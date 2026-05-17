@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
-export type AppRole = "owner" | "admin" | "cashier";
+export type AppRole = "owner" | "admin" | "manager" | "cashier";
 
 export async function requireUser() {
   const session = await auth();
@@ -26,6 +26,16 @@ export async function requireOwnerOrAdmin() {
   const user = await requireUser();
 
   if (user.role !== "owner" && user.role !== "admin") {
+    redirect("/sales");
+  }
+
+  return user;
+}
+
+export async function requireOwnerAdminOrManager() {
+  const user = await requireUser();
+
+  if (user.role !== "owner" && user.role !== "admin" && user.role !== "manager") {
     redirect("/sales");
   }
 
