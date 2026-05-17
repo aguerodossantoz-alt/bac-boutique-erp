@@ -43,13 +43,23 @@ function formatDiff(value: number | null) {
   return String(value);
 }
 
-export function InventorySession() {
+export function InventorySession({
+  role,
+  store: userStore,
+}: {
+  role: "owner" | "admin" | "manager" | "cashier";
+  store: string;
+}) {
+  const isManager = role === "manager";
+  const storeOptions = isManager ? [userStore] : STORE_OPTIONS;
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [query, setQuery] = useState("");
   const [factQty, setFactQty] = useState("0");
   const [sessionLines, setSessionLines] = useState<InventoryLine[]>([]);
   const [message, setMessage] = useState("");
-  const [currentStore, setCurrentStore] = useState("Магазин 1");
+  const [currentStore, setCurrentStore] = useState(
+    isManager ? userStore : "Магазин 1"
+  );
   const [isFinishing, setIsFinishing] = useState(false);
   const barcodeInputRef = useRef<HTMLInputElement | null>(null);
   const storageKey = `${INVENTORY_SESSION_KEY}-${currentStore}`;
@@ -306,9 +316,10 @@ useEffect(() => {
           <select
             value={currentStore}
             onChange={(event) => setCurrentStore(event.target.value)}
-            className="rounded-2xl border border-white/10 bg-[#090909] px-4 py-4 text-sm text-white outline-none"
+            disabled={isManager}
+            className="rounded-2xl border border-white/10 bg-[#090909] px-4 py-4 text-sm text-white outline-none disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {STORE_OPTIONS.map((option) => (
+            {storeOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
