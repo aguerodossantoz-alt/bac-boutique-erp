@@ -50,7 +50,12 @@ const CATEGORY_OPTIONS = [
   "Прочее",
 ];
 
-export function ExpensesManager() {
+type ExpensesManagerProps = {
+  role: "owner" | "admin" | "manager" | "cashier";
+  store: string;
+};
+
+export function ExpensesManager({ role, store: userStore }: ExpensesManagerProps) {
   const [month, setMonth] = useState(currentMonth());
   const [rows, setRows] = useState<ExpenseRow[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
@@ -61,7 +66,8 @@ export function ExpensesManager() {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Прочее");
-  const [store, setStore] = useState("Магазин 1");
+  const isManager = role === "manager";
+  const [store, setStore] = useState(isManager ? userStore : "Магазин 1");
   const [date, setDate] = useState(todayDate());
   const [comment, setComment] = useState("");
 
@@ -97,6 +103,7 @@ export function ExpensesManager() {
     loadExpenses();
   }, [month]);
 
+
   async function saveExpense() {
     try {
       setMessage("");
@@ -125,7 +132,7 @@ export function ExpensesManager() {
       setTitle("");
       setAmount("");
       setCategory("Прочее");
-      setStore("Магазин 1");
+      setStore(isManager ? userStore : "Магазин 1");
       setDate(todayDate());
       setComment("");
       setMessage("Расход сохранен.");
@@ -285,9 +292,10 @@ export function ExpensesManager() {
                 <select
                   value={store}
                   onChange={(event) => setStore(event.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-[#090909] px-4 py-4 text-white outline-none"
+                  disabled={isManager}
+                  className="w-full rounded-2xl border border-white/10 bg-[#090909] px-4 py-4 text-white outline-none disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {STORE_OPTIONS.map((option) => (
+                  {(isManager ? [userStore] : STORE_OPTIONS).map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>

@@ -16,7 +16,7 @@ export default async function ExpensesPage() {
         displayName: user.session.user?.name ?? user.username,
       }}
     >
-      <ExpensesManager />
+      <ExpensesManager role={user.role} store={user.store} />
     </AppFrame>
   );
 }
