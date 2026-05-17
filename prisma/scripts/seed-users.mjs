@@ -1,11 +1,10 @@
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const dbPath = path.resolve(process.cwd(), "dev.db");
-const dbUrl = pathToFileURL(dbPath).href;
+const dbUrl = `file:${dbPath.replace(/\\/g, "/")}`;
 
 const adapter = new PrismaBetterSqlite3({
   url: dbUrl,
