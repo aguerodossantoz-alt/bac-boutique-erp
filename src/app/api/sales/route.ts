@@ -134,6 +134,7 @@ export async function GET(request: NextRequest) {
         id: sale.id,
         total: sale.total,
         createdAt: sale.createdAt.toISOString(),
+        internalReceiptPrintedAt: sale.internalReceiptPrintedAt?.toISOString() ?? null,
         itemsCount: sale.saleItems.reduce((sum: number, item: any) => sum + item.qty, 0),
         lines: sale.saleItems.map((item: any) => ({
           id: item.id,
@@ -365,6 +366,7 @@ export async function POST(request: Request) {
         id: sale.id,
         total: sale.total,
         createdAt: sale.createdAt.toISOString(),
+        internalReceiptPrintedAt: sale.internalReceiptPrintedAt?.toISOString() ?? null,
         itemsCount: sale.saleItems.reduce((sum: number, item: any) => sum + item.qty, 0),
       },
     });
