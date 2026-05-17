@@ -16,7 +16,7 @@ export default async function InventoryPage() {
         displayName: user.session.user?.name ?? user.username,
       }}
     >
-      <InventorySession />
+      <InventorySession role={user.role} store={user.store} />
     </AppFrame>
   );
 }
