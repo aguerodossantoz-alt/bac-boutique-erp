@@ -28,29 +28,29 @@ const users = [
     store: null,
   },
   {
-    username: "cashier_s1_1",
-    password: "CashierS1A2026!",
-    displayName: "Кассир 1 / Магазин 1",
+    username: "ibragim",
+    password: "Ibr_Bac_2026!",
+    displayName: "Ибрагим",
     role: "CASHIER",
     store: "Магазин 1",
   },
   {
-    username: "cashier_s1_2",
-    password: "CashierS1B2026!",
-    displayName: "Кассир 2 / Магазин 1",
+    username: "ramazan",
+    password: "Ram_Bac_2026!",
+    displayName: "Рамазан",
     role: "CASHIER",
     store: "Магазин 1",
   },
   {
-    username: "cashier_s2_1",
-    password: "CashierS2A2026!",
-    displayName: "Кассир / Магазин 2",
+    username: "murad",
+    password: "Mur_Men_2026!",
+    displayName: "Мурад",
     role: "CASHIER",
     store: "Магазин 2",
   },
   {
     username: "khamzat",
-    password: "khamzat",
+    password: "Kham_Manager_2026!",
     displayName: "Хамзат",
     role: "MANAGER",
     store: "Магазин 2",
@@ -58,6 +58,17 @@ const users = [
 ];
 
 async function main() {
+  await prisma.user.updateMany({
+    where: {
+      username: {
+        in: ["cashier_s1_1", "cashier_s1_2", "cashier_s2_1"],
+      },
+    },
+    data: {
+      isActive: false,
+    },
+  });
+
   for (const user of users) {
     const passwordHash = await bcrypt.hash(user.password, 10);
 
