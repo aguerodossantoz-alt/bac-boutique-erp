@@ -28,6 +28,7 @@ function getSessionUser(session: unknown) {
         user?: {
           role?: unknown;
           username?: unknown;
+          displayName?: unknown;
           store?: unknown;
         };
       }
@@ -36,6 +37,7 @@ function getSessionUser(session: unknown) {
   return {
     role: normalizeRole(user?.role),
     username: String(user?.username ?? "").trim(),
+    displayName: String(user?.displayName ?? "").trim(),
     store: String(user?.store ?? "").trim(),
   };
 }
@@ -149,6 +151,9 @@ export async function GET(request: NextRequest) {
         createdAt: sale.createdAt.toISOString(),
         internalReceiptPrintedAt: sale.internalReceiptPrintedAt?.toISOString() ?? null,
         itemsCount: sale.saleItems.reduce((sum: number, item: any) => sum + item.qty, 0),
+        cashierName: toText(sale.cashierName) || toText(sale.cashierUsername) || "Кассир",
+        cashierUsername: toText(sale.cashierUsername),
+        cashierRole: toText(sale.cashierRole),
         lines: sale.saleItems.map((item: any) => ({
           id: item.id,
           productId: item.productId,
@@ -316,9 +321,14 @@ export async function POST(request: Request) {
 
       const total = resolvedItems.reduce((sum: number, item: any) => sum + item.lineTotal, 0);
 
+      const cashierName = sessionUser.displayName || sessionUser.username || "Кассир";
+
       const createdSale = await tx.sale.create({
         data: {
           total,
+          cashierName,
+          cashierUsername: sessionUser.username || null,
+          cashierRole: sessionUser.role,
           saleItems: {
             create: resolvedItems.map((item: any) => ({
               productId: item.productId,
@@ -390,6 +400,9 @@ export async function POST(request: Request) {
         createdAt: sale.createdAt.toISOString(),
         internalReceiptPrintedAt: sale.internalReceiptPrintedAt?.toISOString() ?? null,
         itemsCount: sale.saleItems.reduce((sum: number, item: any) => sum + item.qty, 0),
+        cashierName: toText(sale.cashierName) || toText(sale.cashierUsername) || "Кассир",
+        cashierUsername: toText(sale.cashierUsername),
+        cashierRole: toText(sale.cashierRole),
       },
     });
   } catch (error) {

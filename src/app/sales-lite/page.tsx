@@ -569,7 +569,7 @@ export default function SalesLitePage() {
         discountAmount,
         totalAmount: total,
         store: currentStore,
-        cashier: user?.username || user?.name || "cashier",
+        cashier: user?.name || user?.username || "Кассир",
       },
       {
         saleItems: saleLines,
@@ -579,7 +579,7 @@ export default function SalesLitePage() {
         discountAmount,
         totalAmount: total,
         store: currentStore,
-        cashier: user?.username || user?.name || "cashier",
+        cashier: user?.name || user?.username || "Кассир",
       },
       {
         products: saleLines,
@@ -589,7 +589,7 @@ export default function SalesLitePage() {
         discountAmount,
         totalAmount: total,
         store: currentStore,
-        cashier: user?.username || user?.name || "cashier",
+        cashier: user?.name || user?.username || "Кассир",
       },
     ];
 
@@ -613,7 +613,7 @@ export default function SalesLitePage() {
             id: result?.sale?.id,
             createdAt: result?.sale?.createdAt || new Date().toISOString(),
             store: currentStore,
-            cashier: user?.username || user?.name || "cashier",
+            cashier: result?.sale?.cashierName || result?.sale?.cashierUsername || user?.name || user?.username || "Кассир",
             paymentMethod: "наличные",
             itemsCount: items.reduce((sum, item) => sum + item.qty, 0),
             subtotal,
@@ -913,7 +913,7 @@ export default function SalesLitePage() {
         saleId={receiptSale?.id || 0}
         createdAt={receiptSale?.createdAt || new Date().toISOString()}
         store={receiptSale?.store || currentStore}
-        cashier={receiptSale?.cashier || user?.username || user?.name || "cashier"}
+        cashier={receiptSale?.cashier || user?.name || user?.username || "Кассир"}
         paymentMethod={receiptSale?.paymentMethod || "наличные"}
         itemsCount={receiptSale?.itemsCount || 0}
         subtotal={receiptSale?.subtotal || subtotal}
