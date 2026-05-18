@@ -7,6 +7,8 @@ type Props = {
   store: string;
 };
 
+const DISMISS_KEY = "bac-push-toggle-dismissed-v1";
+
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -20,6 +22,7 @@ export function PushNotificationToggle({ role, store }: Props) {
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   const supported = useMemo(() => {
     return (
@@ -28,6 +31,12 @@ export function PushNotificationToggle({ role, store }: Props) {
       "PushManager" in window &&
       "Notification" in window
     );
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    setDismissed(window.localStorage.getItem(DISMISS_KEY) === "1");
   }, []);
 
   useEffect(() => {
@@ -94,6 +103,17 @@ export function PushNotificationToggle({ role, store }: Props) {
 
   if (role !== "owner" && role !== "admin") {
     return null;
+  }
+
+  if (dismissed) {
+    return null;
+  }
+
+  function dismissCard() {
+    setDismissed(true);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(DISMISS_KEY, "1");
+    }
   }
 
   async function enablePush() {
@@ -189,6 +209,18 @@ export function PushNotificationToggle({ role, store }: Props) {
 
   return (
     <div className="fixed bottom-24 left-3 right-3 z-[99999] rounded-2xl border border-emerald-400/30 bg-[#06140f] p-4 text-sm text-white shadow-2xl shadow-emerald-950/40 sm:bottom-6 sm:left-auto sm:right-6 sm:w-[360px]">
+      <div className="mb-2 flex justify-end">
+        <button
+          type="button"
+          onClick={dismissCard}
+          className="rounded-lg px-2 py-1 text-lg leading-none text-zinc-300 transition hover:bg-white/10 hover:text-white"
+          aria-label="Закрыть карточку push"
+          title="Закрыть"
+        >
+          ×
+        </button>
+      </div>
+
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-xs uppercase tracking-[0.25em] text-emerald-300">
