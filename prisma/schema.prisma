@@ -90,6 +90,7 @@ model RecurringExpenseTemplate {
   comment    String?
   isActive   Boolean  @default(true)
   dayOfMonth Int      @default(1)
+  startMonth String   @default("2026-06")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

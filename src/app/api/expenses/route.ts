@@ -44,12 +44,21 @@ function getMonthRange(month: string | null) {
 function toNumber(value: unknown): number | null { const n = Number(String(value ?? "").trim().replace(/\s/g, "").replace(",", ".")); return Number.isFinite(n) ? n : null; }
 function toText(value: unknown): string { return value == null ? "" : String(value); }
 
-async function generateRecurringExpenses(month: string) {
-  const templates = await prisma.recurringExpenseTemplate.findMany({ where: { isActive: true } });
+async function generateRecurringExpenses(month: string, storeFilter?: string) {
+  const templates = await prisma.recurringExpenseTemplate.findMany({
+    where: {
+      isActive: true,
+      ...(storeFilter ? { store: storeFilter } : {}),
+    },
+  });
   if (!templates.length) return;
 
   await prisma.$transaction(async (tx) => {
     for (const template of templates) {
+      if (!template.isActive || month < template.startMonth) {
+        continue;
+      }
+
       const [y, m] = month.split("-").map(Number);
       const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
       const day = Math.max(1, Math.min(template.dayOfMonth, daysInMonth));
@@ -89,7 +98,11 @@ export async function GET(request: NextRequest) {
 
     if (sessionUser.role === "manager" && !sessionUser.store) return NextResponse.json({ error: "У менеджера не назначен магазин." }, { status: 403 });
 
-    await generateRecurringExpenses(monthKey);
+    if (sessionUser.role === "manager") {
+      await generateRecurringExpenses(monthKey, sessionUser.store);
+    } else {
+      await generateRecurringExpenses(monthKey);
+    }
 
     const enforcedStore = sessionUser.role === "manager" ? sessionUser.store : requestedStore && requestedStore !== "Все магазины" ? requestedStore : "";
     const expenses = await prisma.expense.findMany({ where: { date: { gte: start, lt: end }, ...(enforcedStore ? { store: enforcedStore } : {}) }, orderBy: [{ date: "desc" }, { id: "desc" }] });

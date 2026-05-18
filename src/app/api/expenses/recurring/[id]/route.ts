@@ -16,6 +16,7 @@ type PatchBody = {
   comment?: unknown;
   isActive?: unknown;
   dayOfMonth?: unknown;
+  startMonth?: unknown;
 };
 
 function roleOf(session: unknown) {
@@ -87,6 +88,7 @@ export async function PATCH(
       isActive?: boolean;
       amount?: number;
       dayOfMonth?: number;
+      startMonth?: string;
     } = {};
 
     if (body.title !== undefined) {
@@ -136,6 +138,17 @@ export async function PATCH(
       }
 
       data.dayOfMonth = dayOfMonth;
+    }
+
+
+    if (body.startMonth !== undefined) {
+      const startMonthText = String(body.startMonth ?? "").trim();
+
+      if (!/^\d{4}-\d{2}$/.test(startMonthText)) {
+        throw new Error("startMonth должен быть в формате YYYY-MM.");
+      }
+
+      data.startMonth = startMonthText;
     }
 
     const row = await prisma.recurringExpenseTemplate.update({
