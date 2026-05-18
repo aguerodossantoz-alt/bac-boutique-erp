@@ -65,14 +65,35 @@ model SaleItem {
 }
 
 model Expense {
-  id        Int      @id @default(autoincrement())
-  title     String
-  amount    Float
-  category  String
-  store     String?
-  date      DateTime
-  comment   String?
-  createdAt DateTime @default(now())
+  id                  Int      @id @default(autoincrement())
+  title               String
+  amount              Float
+  category            String
+  store               String?
+  date                DateTime
+  comment             String?
+  recurringTemplateId Int?
+  recurringMonth      String?
+  createdAt           DateTime @default(now())
+
+  recurringTemplate RecurringExpenseTemplate? @relation(fields: [recurringTemplateId], references: [id], onDelete: SetNull)
+
+  @@unique([recurringTemplateId, recurringMonth])
+}
+
+model RecurringExpenseTemplate {
+  id         Int      @id @default(autoincrement())
+  title      String
+  amount     Float
+  category   String
+  store      String?
+  comment    String?
+  isActive   Boolean  @default(true)
+  dayOfMonth Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  expenses Expense[]
 }
 
 model PushSubscription {
