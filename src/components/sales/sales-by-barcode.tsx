@@ -35,6 +35,9 @@ type RecentSale = {
   total: number;
   createdAt: string;
   itemsCount: number;
+  cashierName?: string;
+  cashierUsername?: string;
+  cashierRole?: string;
   lines: Array<{
     id: number;
     productId: number;
@@ -435,7 +438,7 @@ const discountedCartTotal = useMemo(() => {
         id: result?.sale?.id,
         createdAt: result?.sale?.createdAt || new Date().toISOString(),
         store: effectiveStore,
-        cashier: "cashier",
+        cashier: result?.sale?.cashierName || result?.sale?.cashierUsername || "Кассир",
         paymentMethod: "наличные",
         itemsCount: cart.reduce((sum, item) => sum + item.qty, 0),
         subtotal: receiptSubtotal,
@@ -948,7 +951,7 @@ const discountedCartTotal = useMemo(() => {
                           subtotal: sale.total,
                           discountPercent: 0,
                           discountAmount: 0,
-                          cashier: "cashier",
+                          cashier: sale.cashierName || sale.cashierUsername || "Кассир",
                           paymentMethod: "наличные",
                           store: sale.lines[0]?.store || effectiveStore,
                           lines: sale.lines.map((line) => ({ ...line, article: "", size: "", color: "" })),
@@ -976,7 +979,7 @@ const discountedCartTotal = useMemo(() => {
         saleId={receiptSale?.id || 0}
         createdAt={receiptSale?.createdAt || new Date().toISOString()}
         store={receiptSale?.store || effectiveStore}
-        cashier={receiptSale?.cashier || "cashier"}
+        cashier={receiptSale?.cashier || "Кассир"}
         paymentMethod={receiptSale?.paymentMethod || "наличные"}
         itemsCount={receiptSale?.itemsCount || 0}
         subtotal={receiptSale?.subtotal || receiptSale?.total || 0}

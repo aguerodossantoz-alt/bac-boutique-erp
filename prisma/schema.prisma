@@ -48,6 +48,9 @@ model Sale {
   total                    Float
   createdAt                DateTime   @default(now())
   internalReceiptPrintedAt DateTime?
+  cashierName              String?
+  cashierUsername          String?
+  cashierRole              String?
   saleItems                SaleItem[]
 }
 
