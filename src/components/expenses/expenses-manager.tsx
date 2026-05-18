@@ -12,6 +12,19 @@ type ExpenseRow = {
   comment: string;
 };
 
+
+
+type RecurringTemplate = {
+  id: number;
+  title: string;
+  amount: number;
+  category: string;
+  store: string | null;
+  comment: string | null;
+  isActive: boolean;
+  dayOfMonth: number;
+};
+
 type ExpensesResponse = {
   ok: boolean;
   summary: {
@@ -70,6 +83,13 @@ export function ExpensesManager({ role, store: userStore }: ExpensesManagerProps
   const [store, setStore] = useState(isManager ? userStore : "Магазин 1");
   const [date, setDate] = useState(todayDate());
   const [comment, setComment] = useState("");
+  const isOwnerAdmin = role === "owner" || role === "admin";
+  const [templates, setTemplates] = useState<RecurringTemplate[]>([]);
+  const [templateTitle, setTemplateTitle] = useState("");
+  const [templateAmount, setTemplateAmount] = useState("");
+  const [templateCategory, setTemplateCategory] = useState("Прочее");
+  const [templateStore, setTemplateStore] = useState("Магазин 1");
+  const [templateComment, setTemplateComment] = useState("");
 
   async function loadExpenses() {
     try {
@@ -102,6 +122,17 @@ export function ExpensesManager({ role, store: userStore }: ExpensesManagerProps
   useEffect(() => {
     loadExpenses();
   }, [month]);
+
+  async function loadTemplates() {
+    if (!isOwnerAdmin) return;
+    const response = await fetch("/api/expenses/recurring", { cache: "no-store" });
+    const result = await response.json();
+    if (response.ok) setTemplates(Array.isArray(result.rows) ? result.rows : []);
+  }
+
+  useEffect(() => {
+    void loadTemplates();
+  }, [isOwnerAdmin]);
 
 
   async function saveExpense() {
@@ -164,6 +195,37 @@ export function ExpensesManager({ role, store: userStore }: ExpensesManagerProps
       console.error("Ошибка удаления расхода:", error);
       setMessage(error instanceof Error ? error.message : "Ошибка удаления расхода.");
     }
+  }
+
+
+
+  async function addTemplate() {
+    const response = await fetch("/api/expenses/recurring", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: templateTitle, amount: templateAmount, category: templateCategory, store: templateStore, comment: templateComment, isActive: true, dayOfMonth: 1 }),
+    });
+    const result = await response.json();
+    if (!response.ok) { setMessage(result?.error || "Ошибка шаблона"); return; }
+    setTemplateTitle(""); setTemplateAmount(""); setTemplateCategory("Прочее"); setTemplateStore("Магазин 1"); setTemplateComment("");
+    await loadTemplates();
+  }
+
+  async function toggleTemplate(id: number, isActive: boolean) {
+    await fetch(`/api/expenses/recurring/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
+    await loadTemplates();
+  }
+
+  async function updateTemplateAmount(id: number, value: string) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    await fetch(`/api/expenses/recurring/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount }) });
+    await loadTemplates();
+  }
+
+  async function deleteTemplate(id: number) {
+    await fetch(`/api/expenses/recurring/${id}`, { method: "DELETE" });
+    await loadTemplates();
   }
 
   const groupedByStore = useMemo(() => {
@@ -240,6 +302,27 @@ export function ExpensesManager({ role, store: userStore }: ExpensesManagerProps
           </div>
         )}
       </div>
+
+
+      {isOwnerAdmin && (
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+          <div className="text-xs uppercase tracking-[0.3em] text-zinc-500">Ежемесячные расходы</div>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Шаблоны расходов</h2>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <input value={templateTitle} onChange={(e)=>setTemplateTitle(e.target.value)} placeholder="Название" className="rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-white" />
+            <input value={templateAmount} onChange={(e)=>setTemplateAmount(e.target.value)} placeholder="Сумма" className="rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-white" />
+            <select value={templateCategory} onChange={(e)=>setTemplateCategory(e.target.value)} className="rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-white">{CATEGORY_OPTIONS.map((o)=><option key={o} value={o}>{o}</option>)}</select>
+            <select value={templateStore} onChange={(e)=>setTemplateStore(e.target.value)} className="rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-white">{STORE_OPTIONS.map((o)=><option key={o} value={o}>{o}</option>)}</select>
+            <textarea value={templateComment} onChange={(e)=>setTemplateComment(e.target.value)} placeholder="Комментарий" className="md:col-span-2 rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-white" />
+            <button type="button" onClick={addTemplate} className="md:col-span-2 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-3 text-sm text-emerald-300">Добавить шаблон</button>
+          </div>
+          <div className="mt-5 space-y-3">
+            {templates.map((t)=>(<div key={t.id} className="rounded-2xl border border-white/10 bg-[#090909] p-4 text-sm text-zinc-200">
+              <div className="flex flex-wrap items-center gap-3 justify-between"><div>{t.title} · {t.category} · {t.store || "Без магазина"}</div><div className="flex items-center gap-2"><input defaultValue={String(t.amount)} onBlur={(e)=>void updateTemplateAmount(t.id,e.target.value)} className="w-28 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-white" /><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={t.isActive} onChange={(e)=>void toggleTemplate(t.id,e.target.checked)} />Активен</label><button type="button" onClick={()=>void deleteTemplate(t.id)} className="rounded-lg border border-red-400/20 bg-red-500/10 px-2 py-1 text-xs text-red-300">Удалить</button></div></div>
+            </div>))}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
