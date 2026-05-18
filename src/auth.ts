@@ -63,6 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: String(user.id),
           name: user.displayName,
           username: user.username,
+          displayName: user.displayName ?? "",
           role: normalizeRole(user.role),
           store: user.store ?? "",
           remember,
@@ -79,6 +80,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.username = String(
           (user as { username?: string }).username ?? ""
         );
+        token.displayName = String(
+          (user as { displayName?: string; name?: string }).displayName ??
+            (user as { name?: string }).name ??
+            ""
+        );
         token.store = String((user as { store?: string }).store ?? "");
         token.remember = remember;
 
@@ -94,6 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           session.user as {
             role?: string;
             username?: string;
+            displayName?: string;
             store?: string;
           }
         ).role = normalizeRole(token.role);
@@ -102,6 +109,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           session.user as {
             role?: string;
             username?: string;
+            displayName?: string;
             store?: string;
           }
         ).username = String(token.username ?? "");
@@ -110,9 +118,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           session.user as {
             role?: string;
             username?: string;
+            displayName?: string;
+            store?: string;
+          }
+        ).displayName = String(token.displayName ?? "");
+
+        (
+          session.user as {
+            role?: string;
+            username?: string;
+            displayName?: string;
             store?: string;
           }
         ).store = String(token.store ?? "");
+
+        session.user.name = String(token.displayName ?? session.user.name ?? "");
       }
 
       return session;
