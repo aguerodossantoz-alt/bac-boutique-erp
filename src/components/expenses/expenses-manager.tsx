@@ -23,6 +23,7 @@ type RecurringTemplate = {
   comment: string | null;
   isActive: boolean;
   dayOfMonth: number;
+  startMonth: string;
 };
 
 type ExpensesResponse = {
@@ -39,6 +40,13 @@ type ExpensesResponse = {
 function currentMonth() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function nextMonth() {
+  const now = new Date();
+  const date = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const computed = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  return computed < "2026-06" ? "2026-06" : computed;
 }
 
 function todayDate() {
@@ -90,6 +98,7 @@ export function ExpensesManager({ role, store: userStore }: ExpensesManagerProps
   const [templateCategory, setTemplateCategory] = useState("Прочее");
   const [templateStore, setTemplateStore] = useState("Магазин 1");
   const [templateComment, setTemplateComment] = useState("");
+  const [templateStartMonth, setTemplateStartMonth] = useState(nextMonth());
 
   async function loadExpenses() {
     try {
@@ -203,29 +212,68 @@ export function ExpensesManager({ role, store: userStore }: ExpensesManagerProps
     const response = await fetch("/api/expenses/recurring", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: templateTitle, amount: templateAmount, category: templateCategory, store: templateStore, comment: templateComment, isActive: true, dayOfMonth: 1 }),
+      body: JSON.stringify({ title: templateTitle, amount: templateAmount, category: templateCategory, store: templateStore, comment: templateComment, isActive: true, dayOfMonth: 1, startMonth: templateStartMonth }),
     });
     const result = await response.json();
     if (!response.ok) { setMessage(result?.error || "Ошибка шаблона"); return; }
-    setTemplateTitle(""); setTemplateAmount(""); setTemplateCategory("Прочее"); setTemplateStore("Магазин 1"); setTemplateComment("");
+    setTemplateTitle(""); setTemplateAmount(""); setTemplateCategory("Прочее"); setTemplateStore("Магазин 1"); setTemplateComment(""); setTemplateStartMonth(nextMonth());
     await loadTemplates();
+    await loadExpenses();
   }
 
   async function toggleTemplate(id: number, isActive: boolean) {
-    await fetch(`/api/expenses/recurring/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
+    const response = await fetch(`/api/expenses/recurring/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
+    const result = await response.json();
+    if (!response.ok) {
+      setMessage(result?.error || "Не удалось обновить активность шаблона.");
+      return;
+    }
     await loadTemplates();
+    await loadExpenses();
   }
 
   async function updateTemplateAmount(id: number, value: string) {
-    const amount = Number(value);
-    if (!Number.isFinite(amount) || amount <= 0) return;
-    await fetch(`/api/expenses/recurring/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount }) });
+    const amountText = String(value ?? "")
+      .trim()
+      .replace(/\s/g, "")
+      .replace(",", ".");
+    const amount = Number(amountText);
+
+    if (!amountText || !Number.isFinite(amount) || amount <= 0) {
+      setMessage("Введите корректную сумму шаблона.");
+      return;
+    }
+
+    const response = await fetch(`/api/expenses/recurring/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount }) });
+    const result = await response.json();
+    if (!response.ok) {
+      setMessage(result?.error || "Не удалось обновить сумму шаблона.");
+      return;
+    }
     await loadTemplates();
+    await loadExpenses();
+  }
+
+  async function updateTemplateStartMonth(id: number, startMonth: string) {
+    const response = await fetch(`/api/expenses/recurring/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ startMonth }) });
+    const result = await response.json();
+    if (!response.ok) {
+      setMessage(result?.error || "Не удалось обновить месяц старта шаблона.");
+      return;
+    }
+    await loadTemplates();
+    await loadExpenses();
   }
 
   async function deleteTemplate(id: number) {
-    await fetch(`/api/expenses/recurring/${id}`, { method: "DELETE" });
+    const response = await fetch(`/api/expenses/recurring/${id}`, { method: "DELETE" });
+    const result = await response.json();
+    if (!response.ok) {
+      setMessage(result?.error || "Не удалось удалить шаблон.");
+      return;
+    }
     await loadTemplates();
+    await loadExpenses();
   }
 
   const groupedByStore = useMemo(() => {
@@ -314,11 +362,15 @@ export function ExpensesManager({ role, store: userStore }: ExpensesManagerProps
             <select value={templateCategory} onChange={(e)=>setTemplateCategory(e.target.value)} className="rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-white">{CATEGORY_OPTIONS.map((o)=><option key={o} value={o}>{o}</option>)}</select>
             <select value={templateStore} onChange={(e)=>setTemplateStore(e.target.value)} className="rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-white">{STORE_OPTIONS.map((o)=><option key={o} value={o}>{o}</option>)}</select>
             <textarea value={templateComment} onChange={(e)=>setTemplateComment(e.target.value)} placeholder="Комментарий" className="md:col-span-2 rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-white" />
+            <div>
+              <div className="mb-2 text-sm text-zinc-400">Начать с месяца</div>
+              <input type="month" value={templateStartMonth} onChange={(e)=>setTemplateStartMonth(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-[#090909] px-4 py-3 text-white" />
+            </div>
             <button type="button" onClick={addTemplate} className="md:col-span-2 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-3 text-sm text-emerald-300">Добавить шаблон</button>
           </div>
           <div className="mt-5 space-y-3">
             {templates.map((t)=>(<div key={t.id} className="rounded-2xl border border-white/10 bg-[#090909] p-4 text-sm text-zinc-200">
-              <div className="flex flex-wrap items-center gap-3 justify-between"><div>{t.title} · {t.category} · {t.store || "Без магазина"}</div><div className="flex items-center gap-2"><input defaultValue={String(t.amount)} onBlur={(e)=>void updateTemplateAmount(t.id,e.target.value)} className="w-28 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-white" /><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={t.isActive} onChange={(e)=>void toggleTemplate(t.id,e.target.checked)} />Активен</label><button type="button" onClick={()=>void deleteTemplate(t.id)} className="rounded-lg border border-red-400/20 bg-red-500/10 px-2 py-1 text-xs text-red-300">Удалить</button></div></div>
+              <div className="flex flex-wrap items-center gap-3 justify-between"><div>{t.title} · {t.category} · {t.store || "Без магазина"} · Начинается с {t.startMonth}</div><div className="flex items-center gap-2"><input defaultValue={String(t.amount)} onBlur={(e)=>void updateTemplateAmount(t.id,e.target.value)} className="w-28 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-white" /><input type="month" defaultValue={t.startMonth} onBlur={(e)=>void updateTemplateStartMonth(t.id,e.target.value)} className="w-36 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-white" /><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={t.isActive} onChange={(e)=>void toggleTemplate(t.id,e.target.checked)} />Активен</label><button type="button" onClick={()=>void deleteTemplate(t.id)} className="rounded-lg border border-red-400/20 bg-red-500/10 px-2 py-1 text-xs text-red-300">Удалить</button></div></div>
             </div>))}
           </div>
         </div>
